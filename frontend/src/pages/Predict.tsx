@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowDown, Minus, Sparkles } from "lucide-react";
+import { ArrowDown, ArrowUp, Minus, Sparkles } from "lucide-react";
 import { api } from "../api";
 import type { Mode, PredictRequest, PredictResult } from "../types";
 import {
@@ -168,13 +168,20 @@ export default function Predict() {
                         <span className="text-[13px] font-bold tabular-nums text-ups-brown-800">
                           {num(w.new_score)}
                         </span>
-                        <span className={"text-[11px] font-bold tabular-nums px-1.5 py-1 rounded-[2px] " +
+                        <span className={"text-[11px] font-bold figure px-1.5 py-1 rounded-[2px] " +
                           "inline-flex items-center gap-1 leading-none " +
-                          (w.helps ? "bg-risk-low/10 text-risk-low" : "bg-surface-sunk text-text-faint")}>
+                          (w.helps ? "bg-risk-low/10 text-risk-low"
+                            : w.delta > 0 ? "bg-risk-high/10 text-risk-high"
+                            : "bg-surface-sunk text-text-faint")}
+                          title={w.helps ? "Lowers the risk score"
+                            : w.delta > 0 ? "Raises the risk score"
+                            : "No measurable effect"}>
                           {w.helps
                             ? <ArrowDown size={10} strokeWidth={3} aria-hidden="true" />
-                            : <Minus size={10} strokeWidth={3} aria-hidden="true" />}
-                          {w.delta.toFixed(1)}
+                            : w.delta > 0
+                              ? <ArrowUp size={10} strokeWidth={3} aria-hidden="true" />
+                              : <Minus size={10} strokeWidth={3} aria-hidden="true" />}
+                          {w.delta > 0 ? "+" : ""}{w.delta.toFixed(1)}
                         </span>
                       </li>
                     ))}
