@@ -5,6 +5,7 @@ Endpoints match the locked API contract exactly.
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import time
@@ -246,78 +247,180 @@ async def get_shipment(shipment_id: str) -> dict:
     return _shipment_to_detail(shipment)
 
 
+# Signals split into two tiers by cost:
+#   Tier 1 (weather) is free and parallel-safe, so we fetch it for every unique
+#     location on every route - origin AND destination.
+#   Tier 2 (news, traffic, flight, ports) is rate-limited, quota-capped or
+#     serial-only, so we spend it on the shipments that actually need
+#     attention rather than uniformly across the fleet.
+TOP_N_DEEP_SIGNALS = 6
+WEATHER_CONCURRENCY = 8
+# AviationStack is capped at 60 calls/month, so one refresh must never be able
+# to spend a meaningful fraction of it. Responses are cached 6h per airport.
+MAX_FLIGHT_CALLS_PER_REFRESH = 4
+# Pinned historical scenarios keep their archived weather - see ml/scenarios.py
+SCENARIO_PREFIX = "DEMO-"
+
+
+def _rescore(s: ShipmentDB, features: dict, signals: dict) -> None:
+    """Score one shipment from its features and persist the result."""
+    risk = scoring_engine.score_shipment(features)
+    rec = generate_recommendation(
+        risk["score"], risk["band"], risk["breach_probability"],
+        risk.get("drivers", []), s.mode)
+
+    s.risk_score = risk["score"]
+    s.risk_band = risk["band"]
+    s.breach_probability = risk["breach_probability"]
+    s.predicted_delay_hours = risk["predicted_delay_hours"]
+    s.confidence = risk["confidence"]
+    s.model_used = risk["model_used"]
+    s.validation_status = risk["validation_status"]
+    s.features_json = json.dumps(features, default=str)
+    s.drivers_json = json.dumps(risk.get("drivers", []), default=str)
+    s.signals_json = json.dumps(signals, default=str)
+    s.recommendation_json = json.dumps(rec, default=str)
+    s.updated_at = datetime.now().isoformat()
+
+
 @app.post("/api/refresh")
 async def refresh_signals() -> dict:
-    """Re-pull live signals and rescore all shipments."""
+    """Re-pull live signals and rescore the fleet.
+
+    Two passes: bulk weather for every route location, then the expensive
+    signals for the highest-risk shipments only.
+    """
     start = time.time()
     session = get_session()
     shipments = session.exec(select(ShipmentDB)).all()
+    degraded: set[str] = set()
+
+    # ── Pass 1: weather for every unique location on every route ──
+    locations: dict[str, tuple[float, float, str]] = {}
+    for s in shipments:
+        locations.setdefault(s.origin_code, (s.origin_lat, s.origin_lon, s.origin_name))
+        locations.setdefault(s.dest_code, (s.dest_lat, s.dest_lon, s.dest_name))
+
+    sem = asyncio.Semaphore(WEATHER_CONCURRENCY)
+
+    async def _wx(code: str, lat: float, lon: float) -> tuple[str, dict]:
+        async with sem:
+            return code, await weather_provider.fetch(lat, lon, code)
+
+    results = await asyncio.gather(
+        *[_wx(c, v[0], v[1]) for c, v in locations.items()],
+        return_exceptions=True,
+    )
+    weather_by_loc: dict[str, dict] = {}
+    for r in results:
+        if isinstance(r, BaseException):
+            degraded.add("weather")
+            continue
+        code, sig = r
+        weather_by_loc[code] = sig
+        if not sig.get("is_live"):
+            degraded.add("weather")
 
     scored = 0
-    degraded = set()
+    signals_by_id: dict[str, dict] = {}
+    features_by_id: dict[str, dict] = {}
 
     for s in shipments:
         try:
-            # Fetch live signals (DON'T call flight API in a loop!)
-            weather_sig = await weather_provider.fetch(
-                s.dest_lat, s.dest_lon, s.dest_code)
-            news_sig = await news_provider.fetch(
-                s.origin_lat, s.origin_lon, s.origin_code,
-                location_name=s.origin_name)
-
-            if not weather_sig.get("is_live"):
-                degraded.add("weather")
-            if not news_sig.get("is_live"):
-                degraded.add("news")
-
-            # Update features with live signals
             features = json.loads(s.features_json) if s.features_json else {}
-            features["weather_severity_dest"] = weather_sig.get("severity", 0)
-            features["news_risk_score"] = news_sig.get("severity", 0)
-            features["precip_mm"] = weather_sig.get("precip_mm", 0)
-            features["snowfall_cm"] = weather_sig.get("snowfall_cm", 0)
-            features["wind_kph"] = weather_sig.get("wind_kph", 0)
+            if s.id.startswith(SCENARIO_PREFIX):
+                # Historical replay: keep its archived weather, rescore only.
+                features_by_id[s.id] = features
+                signals_by_id[s.id] = json.loads(s.signals_json) if s.signals_json else {}
+                scored += 1
+                continue
+            wx_o = weather_by_loc.get(s.origin_code, {})
+            wx_d = weather_by_loc.get(s.dest_code, {})
 
-            # Rescore
-            risk = scoring_engine.score_shipment(features)
+            sev_o = wx_o.get("severity", features.get("weather_severity_origin", 0))
+            sev_d = wx_d.get("severity", features.get("weather_severity_dest", 0))
+            features["weather_severity_origin"] = sev_o
+            features["weather_severity_dest"] = sev_d
+            features["weather_severity_route_max"] = max(sev_o, sev_d)
+            features["precip_mm"] = wx_d.get("precip_mm", features.get("precip_mm", 0))
+            features["snowfall_cm"] = wx_d.get("snowfall_cm", features.get("snowfall_cm", 0))
+            features["wind_kph"] = wx_d.get("wind_kph", features.get("wind_kph", 0))
 
-            # Generate recommendation
-            rec = generate_recommendation(
-                risk["score"], risk["band"], risk["breach_probability"],
-                risk.get("drivers", []), s.mode)
+            signals = {"weather_origin": wx_o, "weather": wx_d}
+            features_by_id[s.id] = features
+            signals_by_id[s.id] = signals
 
-            # Update DB
-            s.risk_score = risk["score"]
-            s.risk_band = risk["band"]
-            s.breach_probability = risk["breach_probability"]
-            s.predicted_delay_hours = risk["predicted_delay_hours"]
-            s.confidence = risk["confidence"]
-            s.model_used = risk["model_used"]
-            s.validation_status = risk["validation_status"]
-            s.features_json = json.dumps(features, default=str)
-            s.drivers_json = json.dumps(risk.get("drivers", []), default=str)
-            s.signals_json = json.dumps({
-                "weather": weather_sig,
-                "news": news_sig,
-            }, default=str)
-            s.recommendation_json = json.dumps(rec, default=str)
-            s.updated_at = datetime.now().isoformat()
-
+            _rescore(s, features, signals)
             session.add(s)
             scored += 1
-
         except Exception as e:
             logger.warning(f"Failed to refresh {s.id}: {e}")
 
     session.commit()
-    session.close()
 
-    duration_ms = int((time.time() - start) * 1000)
+    # ── Pass 2: expensive signals for the highest-risk shipments only ──
+    ranked = sorted(
+        [s for s in shipments
+         if s.id in features_by_id and not s.id.startswith(SCENARIO_PREFIX)],
+        key=lambda x: x.risk_score or 0.0,
+        reverse=True,
+    )[:TOP_N_DEEP_SIGNALS]
+    deepened = 0
+    flight_calls = 0
+
+    for s in ranked:
+        try:
+            features = features_by_id[s.id]
+            signals = signals_by_id[s.id]
+
+            news_sig = await news_provider.fetch(
+                s.origin_lat, s.origin_lon, s.origin_code,
+                location_name=s.origin_name)
+            signals["news"] = news_sig
+            features["news_risk_score"] = news_sig.get("severity", 0)
+            if not news_sig.get("is_live"):
+                degraded.add("news")
+
+            traffic_sig = await traffic_provider.fetch(
+                s.dest_lat, s.dest_lon, s.dest_code)
+            signals["traffic"] = traffic_sig
+            features["traffic_congestion_lastmile"] = traffic_sig.get("severity", 0)
+            if not traffic_sig.get("is_live"):
+                degraded.add("traffic")
+
+            if s.mode == "AIR" and flight_calls < MAX_FLIGHT_CALLS_PER_REFRESH:
+                flight_calls += 1
+                flight_sig = await flight_provider.fetch(
+                    s.origin_lat, s.origin_lon, s.origin_code)
+                signals["flight"] = flight_sig
+                features["flight_delay_probability"] = flight_sig.get("severity", 0)
+                if not flight_sig.get("is_live"):
+                    degraded.add("flight")
+
+            if s.mode == "OCEAN":
+                port_sig = await ports_provider.fetch(
+                    s.dest_lat, s.dest_lon, s.dest_code,
+                    location_name=s.dest_name)
+                signals["ports"] = port_sig
+                features["port_congestion_index"] = port_sig.get("severity", 0)
+                if not port_sig.get("is_live"):
+                    degraded.add("ports")
+
+            _rescore(s, features, signals)
+            session.add(s)
+            deepened += 1
+        except Exception as e:
+            logger.warning(f"Deep signal fetch failed for {s.id}: {e}")
+
+    session.commit()
+    session.close()
 
     return {
         "scored": scored,
-        "duration_ms": duration_ms,
-        "providers_degraded": list(degraded),
+        "deep_signals_fetched": deepened,
+        "locations_fetched": len(weather_by_loc),
+        "duration_ms": int((time.time() - start) * 1000),
+        "providers_degraded": sorted(degraded),
     }
 
 

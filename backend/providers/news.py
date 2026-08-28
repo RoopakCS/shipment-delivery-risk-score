@@ -61,7 +61,8 @@ class NewsProvider(RiskSignalProvider):
                 "maxrecords": "25",
             }
 
-            async with httpx.AsyncClient(timeout=15.0) as client:
+            # GDELT rate-limits hard; fail fast rather than stall a refresh.
+            async with httpx.AsyncClient(timeout=6.0) as client:
                 resp = await client.get(GDELT_DOC_URL, params=params)
                 resp.raise_for_status()
                 data = resp.json()

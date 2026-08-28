@@ -1,1 +1,8 @@
 .env
+__pycache__/
+*.pyc
+node_modules/
+risk_score.db
+ml/data/cache/
+*.log
+.venv/

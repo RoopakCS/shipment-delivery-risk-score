@@ -2,7 +2,7 @@
 Model training for Shipment Delivery Risk Score.
 
 M4: Train TWO model sets sharing the same feature schema:
-  MODEL_AIR:     trained on train_air.parquet     -> validated_on_real_data
+  MODEL_AIR:     trained on train_air.parquet     -> real_weather_simulated_flights
   MODEL_SURFACE: trained on train_surface.parquet  -> simulated
 
 Each model set:
@@ -259,7 +259,7 @@ def train_model_set(
     metrics[f"{name.lower()}_breach_rate"] = float(df["breached"].mean())
 
     if name == "AIR":
-        metrics["validation_status"] = "validated_on_real_data"
+        metrics["validation_status"] = "real_weather_simulated_flights"
     else:
         metrics["validation_status"] = "simulated"
 

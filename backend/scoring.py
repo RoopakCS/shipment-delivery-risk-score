@@ -185,7 +185,7 @@ class ScoringEngine:
         confidence = round(min(0.95, 0.5 + abs(p_breach - 0.5) * 0.9), 2)
 
         # Validation status
-        validation = "validated_on_real_data" if model_name == "air" else "simulated"
+        validation = "real_weather_simulated_flights" if model_name == "air" else "simulated"
 
         return {
             "score": score,

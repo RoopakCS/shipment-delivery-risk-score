@@ -1,317 +1,317 @@
 [
   {
     "id": "BT-001",
-    "airport": "MSP",
-    "airport_name": "Minneapolis-St. Paul",
-    "date": "2024-01-10",
-    "lat": 44.8848,
-    "lon": -93.2223,
-    "prediction": {
-      "risk_score": 3.0,
-      "band": "LOW",
-      "breach_probability": 0.2195,
-      "predicted_delay_hours": 0.2,
-      "drivers": [
-        {
-          "feature": "distance_km",
-          "label": "Route distance",
-          "value": 1500.0,
-          "contribution": 0.1371,
-          "direction": "increases",
-          "explanation": "Route distance is 1500 km"
-        },
-        {
-          "feature": "carrier_reliability",
-          "label": "Carrier reliability",
-          "value": 0.7872,
-          "contribution": 0.0785,
-          "direction": "increases",
-          "explanation": "Carrier on-time rate is 78.7%"
-        },
-        {
-          "feature": "wind_kph",
-          "label": "Wind speed",
-          "value": 11.5,
-          "contribution": 0.0375,
-          "direction": "decreases",
-          "explanation": "Max wind speed is 12 km/h"
-        }
-      ]
-    },
-    "inputs_before_event": {
-      "weather_severity": 0.2911,
-      "precipitation_mm": 0.8,
-      "snowfall_cm": 0.56,
-      "wind_kph": 11.5,
-      "news_risk_score": 0.0,
-      "carrier_reliability": 0.7872,
-      "lane_delay_rate": 0.2128
-    },
-    "actual_outcome": {
-      "total_flights": 74,
-      "delayed_flights": 26,
-      "delay_rate": 0.3514,
-      "mean_delay_minutes": 26.4,
-      "max_delay_minutes": 269.0,
-      "cause_breakdown_pct": {
-        "carrier": 17.3,
-        "weather": 32.0,
-        "nas_system": 21.2,
-        "late_aircraft": 29.5
-      }
-    },
-    "verdict": "FALSE_NEGATIVE"
-  },
-  {
-    "id": "BT-002",
     "airport": "EWR",
     "airport_name": "Newark Liberty",
-    "date": "2024-02-07",
+    "date": "2024-02-13",
     "lat": 40.6895,
     "lon": -74.1745,
     "prediction": {
-      "risk_score": 2.9,
-      "band": "LOW",
-      "breach_probability": 0.212,
-      "predicted_delay_hours": 0.29,
+      "risk_score": 8.8,
+      "band": "CRITICAL",
+      "breach_probability": 0.8664,
+      "predicted_delay_hours": 1.33,
       "drivers": [
-        {
-          "feature": "distance_km",
-          "label": "Route distance",
-          "value": 1500.0,
-          "contribution": 0.0965,
-          "direction": "increases",
-          "explanation": "Route distance is 1500 km"
-        },
-        {
-          "feature": "wind_kph",
-          "label": "Wind speed",
-          "value": 12.7,
-          "contribution": 0.041,
-          "direction": "increases",
-          "explanation": "Max wind speed is 13 km/h"
-        },
-        {
-          "feature": "planned_transit_hours",
-          "label": "Planned transit time",
-          "value": 4.0,
-          "contribution": 0.0389,
-          "direction": "increases",
-          "explanation": "Planned transit time is 4.0 hours"
-        }
-      ]
-    },
-    "inputs_before_event": {
-      "weather_severity": 0.154,
-      "precipitation_mm": 0.0,
-      "snowfall_cm": 0.0,
-      "wind_kph": 12.7,
-      "news_risk_score": 0.0,
-      "carrier_reliability": 0.7974,
-      "lane_delay_rate": 0.2026
-    },
-    "actual_outcome": {
-      "total_flights": 76,
-      "delayed_flights": 25,
-      "delay_rate": 0.3289,
-      "mean_delay_minutes": 15.6,
-      "max_delay_minutes": 187.0,
-      "cause_breakdown_pct": {
-        "carrier": 25.0,
-        "weather": 17.3,
-        "nas_system": 39.8,
-        "late_aircraft": 17.9
-      }
-    },
-    "verdict": "FALSE_NEGATIVE"
-  },
-  {
-    "id": "BT-003",
-    "airport": "STL",
-    "airport_name": "St. Louis Lambert",
-    "date": "2024-02-09",
-    "lat": 38.7487,
-    "lon": -90.37,
-    "prediction": {
-      "risk_score": 3.1,
-      "band": "LOW",
-      "breach_probability": 0.2278,
-      "predicted_delay_hours": 0.25,
-      "drivers": [
-        {
-          "feature": "carrier_reliability",
-          "label": "Carrier reliability",
-          "value": 0.8054,
-          "contribution": 0.095,
-          "direction": "decreases",
-          "explanation": "Carrier on-time rate is 80.5%"
-        },
         {
           "feature": "weather_severity_origin",
           "label": "Origin weather",
-          "value": 0.0432,
-          "contribution": 0.0468,
-          "direction": "decreases",
-          "explanation": "Weather severity at origin is 0.04/1.0"
-        },
-        {
-          "feature": "weather_severity_dest",
-          "label": "Destination weather",
-          "value": 0.0216,
-          "contribution": 0.0334,
+          "value": 0.8092,
+          "contribution": 1.5831,
           "direction": "increases",
-          "explanation": "Weather severity at destination is 0.02/1.0"
-        }
-      ]
-    },
-    "inputs_before_event": {
-      "weather_severity": 0.0432,
-      "precipitation_mm": 0.0,
-      "snowfall_cm": 0.0,
-      "wind_kph": 23.7,
-      "news_risk_score": 0.0,
-      "carrier_reliability": 0.8054,
-      "lane_delay_rate": 0.1946
-    },
-    "actual_outcome": {
-      "total_flights": 80,
-      "delayed_flights": 26,
-      "delay_rate": 0.325,
-      "mean_delay_minutes": 14.7,
-      "max_delay_minutes": 145.0,
-      "cause_breakdown_pct": {
-        "carrier": 18.3,
-        "weather": 22.2,
-        "nas_system": 32.4,
-        "late_aircraft": 27.2
-      }
-    },
-    "verdict": "FALSE_NEGATIVE"
-  },
-  {
-    "id": "BT-004",
-    "airport": "CLT",
-    "airport_name": "Charlotte Douglas",
-    "date": "2024-02-01",
-    "lat": 35.2144,
-    "lon": -80.9473,
-    "prediction": {
-      "risk_score": 3.0,
-      "band": "LOW",
-      "breach_probability": 0.2172,
-      "predicted_delay_hours": 0.22,
-      "drivers": [
-        {
-          "feature": "distance_km",
-          "label": "Route distance",
-          "value": 1500.0,
-          "contribution": 0.1786,
-          "direction": "increases",
-          "explanation": "Route distance is 1500 km"
-        },
-        {
-          "feature": "planned_transit_hours",
-          "label": "Planned transit time",
-          "value": 4.0,
-          "contribution": 0.0903,
-          "direction": "increases",
-          "explanation": "Planned transit time is 4.0 hours"
+          "explanation": "Weather severity at origin is 0.81/1.0"
         },
         {
           "feature": "weather_severity_route_max",
           "label": "Worst weather on route",
-          "value": 0.0607,
-          "contribution": 0.0435,
+          "value": 0.8092,
+          "contribution": 1.25,
           "direction": "increases",
-          "explanation": "Worst weather severity along route is 0.06/1.0"
+          "explanation": "Worst weather severity along route is 0.81/1.0"
+        },
+        {
+          "feature": "snowfall_cm",
+          "label": "Snowfall",
+          "value": 19.88,
+          "contribution": 0.5506,
+          "direction": "increases",
+          "explanation": "Snowfall forecast is 19.9 cm"
         }
       ]
     },
     "inputs_before_event": {
-      "weather_severity": 0.0607,
-      "precipitation_mm": 0.0,
-      "snowfall_cm": 0.0,
-      "wind_kph": 10.6,
+      "weather_severity": 0.8092,
+      "precipitation_mm": 29.5,
+      "snowfall_cm": 19.88,
+      "wind_kph": 23.7,
       "news_risk_score": 0.0,
-      "carrier_reliability": 0.8012,
-      "lane_delay_rate": 0.1988
+      "carrier_reliability": 0.7716,
+      "lane_delay_rate": 0.2284
     },
     "actual_outcome": {
-      "total_flights": 79,
-      "delayed_flights": 25,
-      "delay_rate": 0.3165,
-      "mean_delay_minutes": 17.2,
-      "max_delay_minutes": 241.0,
+      "total_flights": 97,
+      "delayed_flights": 91,
+      "delay_rate": 0.9381,
+      "mean_delay_minutes": 102.4,
+      "max_delay_minutes": 425.0,
       "cause_breakdown_pct": {
-        "carrier": 24.5,
-        "weather": 21.8,
-        "nas_system": 11.1,
-        "late_aircraft": 42.5
+        "carrier": 0.0,
+        "weather": 100.0,
+        "nas_system": 0.0,
+        "late_aircraft": 0.0
       }
     },
-    "verdict": "FALSE_NEGATIVE"
+    "verdict": "TRUE_POSITIVE"
+  },
+  {
+    "id": "BT-002",
+    "airport": "ORD",
+    "airport_name": "Chicago O'Hare",
+    "date": "2024-01-13",
+    "lat": 41.9742,
+    "lon": -87.9073,
+    "prediction": {
+      "risk_score": 8.8,
+      "band": "CRITICAL",
+      "breach_probability": 0.8689,
+      "predicted_delay_hours": 1.66,
+      "drivers": [
+        {
+          "feature": "weather_severity_origin",
+          "label": "Origin weather",
+          "value": 0.7382,
+          "contribution": 1.4135,
+          "direction": "increases",
+          "explanation": "Weather severity at origin is 0.74/1.0"
+        },
+        {
+          "feature": "weather_severity_route_max",
+          "label": "Worst weather on route",
+          "value": 0.7382,
+          "contribution": 1.2303,
+          "direction": "increases",
+          "explanation": "Worst weather severity along route is 0.74/1.0"
+        },
+        {
+          "feature": "carrier_reliability",
+          "label": "Carrier reliability",
+          "value": 0.6602,
+          "contribution": 0.3255,
+          "direction": "increases",
+          "explanation": "Carrier on-time rate is 66.0%"
+        }
+      ]
+    },
+    "inputs_before_event": {
+      "weather_severity": 0.7382,
+      "precipitation_mm": 2.8,
+      "snowfall_cm": 2.1,
+      "wind_kph": 28.9,
+      "news_risk_score": 0.0,
+      "carrier_reliability": 0.6602,
+      "lane_delay_rate": 0.3398
+    },
+    "actual_outcome": {
+      "total_flights": 92,
+      "delayed_flights": 83,
+      "delay_rate": 0.9022,
+      "mean_delay_minutes": 95.0,
+      "max_delay_minutes": 336.0,
+      "cause_breakdown_pct": {
+        "carrier": 0.0,
+        "weather": 100.0,
+        "nas_system": 0.0,
+        "late_aircraft": 0.0
+      }
+    },
+    "verdict": "TRUE_POSITIVE"
+  },
+  {
+    "id": "BT-003",
+    "airport": "ORD",
+    "airport_name": "Chicago O'Hare",
+    "date": "2024-01-19",
+    "lat": 41.9742,
+    "lon": -87.9073,
+    "prediction": {
+      "risk_score": 8.1,
+      "band": "CRITICAL",
+      "breach_probability": 0.793,
+      "predicted_delay_hours": 1.16,
+      "drivers": [
+        {
+          "feature": "weather_severity_origin",
+          "label": "Origin weather",
+          "value": 0.6976,
+          "contribution": 1.139,
+          "direction": "increases",
+          "explanation": "Weather severity at origin is 0.70/1.0"
+        },
+        {
+          "feature": "weather_severity_route_max",
+          "label": "Worst weather on route",
+          "value": 0.6976,
+          "contribution": 0.9446,
+          "direction": "increases",
+          "explanation": "Worst weather severity along route is 0.70/1.0"
+        },
+        {
+          "feature": "carrier_reliability",
+          "label": "Carrier reliability",
+          "value": 0.5045,
+          "contribution": 0.2392,
+          "direction": "increases",
+          "explanation": "Carrier on-time rate is 50.4%"
+        }
+      ]
+    },
+    "inputs_before_event": {
+      "weather_severity": 0.6976,
+      "precipitation_mm": 3.1,
+      "snowfall_cm": 2.17,
+      "wind_kph": 20.5,
+      "news_risk_score": 0.0,
+      "carrier_reliability": 0.5045,
+      "lane_delay_rate": 0.4955
+    },
+    "actual_outcome": {
+      "total_flights": 100,
+      "delayed_flights": 90,
+      "delay_rate": 0.9,
+      "mean_delay_minutes": 82.6,
+      "max_delay_minutes": 377.0,
+      "cause_breakdown_pct": {
+        "carrier": 0.0,
+        "weather": 100.0,
+        "nas_system": 0.0,
+        "late_aircraft": 0.0
+      }
+    },
+    "verdict": "TRUE_POSITIVE"
+  },
+  {
+    "id": "BT-004",
+    "airport": "DEN",
+    "airport_name": "Denver International",
+    "date": "2024-01-14",
+    "lat": 39.8561,
+    "lon": -104.6737,
+    "prediction": {
+      "risk_score": 7.7,
+      "band": "HIGH",
+      "breach_probability": 0.7484,
+      "predicted_delay_hours": 1.23,
+      "drivers": [
+        {
+          "feature": "weather_severity_origin",
+          "label": "Origin weather",
+          "value": 0.7072,
+          "contribution": 1.0948,
+          "direction": "increases",
+          "explanation": "Weather severity at origin is 0.71/1.0"
+        },
+        {
+          "feature": "weather_severity_route_max",
+          "label": "Worst weather on route",
+          "value": 0.7072,
+          "contribution": 0.994,
+          "direction": "increases",
+          "explanation": "Worst weather severity along route is 0.71/1.0"
+        },
+        {
+          "feature": "carrier_reliability",
+          "label": "Carrier reliability",
+          "value": 0.6569,
+          "contribution": 0.2342,
+          "direction": "increases",
+          "explanation": "Carrier on-time rate is 65.7%"
+        }
+      ]
+    },
+    "inputs_before_event": {
+      "weather_severity": 0.7072,
+      "precipitation_mm": 0.9,
+      "snowfall_cm": 0.63,
+      "wind_kph": 13.7,
+      "news_risk_score": 0.0,
+      "carrier_reliability": 0.6569,
+      "lane_delay_rate": 0.3431
+    },
+    "actual_outcome": {
+      "total_flights": 86,
+      "delayed_flights": 77,
+      "delay_rate": 0.8953,
+      "mean_delay_minutes": 85.3,
+      "max_delay_minutes": 307.0,
+      "cause_breakdown_pct": {
+        "carrier": 0.0,
+        "weather": 100.0,
+        "nas_system": 0.0,
+        "late_aircraft": 0.0
+      }
+    },
+    "verdict": "TRUE_POSITIVE"
   },
   {
     "id": "BT-005",
-    "airport": "OAK",
-    "airport_name": "Oakland International",
-    "date": "2024-01-10",
-    "lat": 37.7213,
-    "lon": -122.2208,
+    "airport": "ORD",
+    "airport_name": "Chicago O'Hare",
+    "date": "2024-01-09",
+    "lat": 41.9742,
+    "lon": -87.9073,
     "prediction": {
-      "risk_score": 2.9,
-      "band": "LOW",
-      "breach_probability": 0.2096,
-      "predicted_delay_hours": 0.21,
+      "risk_score": 8.9,
+      "band": "CRITICAL",
+      "breach_probability": 0.8781,
+      "predicted_delay_hours": 1.07,
       "drivers": [
         {
-          "feature": "distance_km",
-          "label": "Route distance",
-          "value": 1500.0,
-          "contribution": 0.073,
+          "feature": "weather_severity_origin",
+          "label": "Origin weather",
+          "value": 0.8027,
+          "contribution": 1.5935,
           "direction": "increases",
-          "explanation": "Route distance is 1500 km"
+          "explanation": "Weather severity at origin is 0.80/1.0"
         },
         {
-          "feature": "weather_severity_dest",
-          "label": "Destination weather",
-          "value": 0.1207,
-          "contribution": 0.0417,
-          "direction": "decreases",
-          "explanation": "Weather severity at destination is 0.12/1.0"
+          "feature": "weather_severity_route_max",
+          "label": "Worst weather on route",
+          "value": 0.8027,
+          "contribution": 1.2577,
+          "direction": "increases",
+          "explanation": "Worst weather severity along route is 0.80/1.0"
         },
         {
-          "feature": "planned_transit_hours",
-          "label": "Planned transit time",
-          "value": 4.0,
-          "contribution": 0.0408,
+          "feature": "snowfall_cm",
+          "label": "Snowfall",
+          "value": 18.69,
+          "contribution": 0.3949,
           "direction": "increases",
-          "explanation": "Planned transit time is 4.0 hours"
+          "explanation": "Snowfall forecast is 18.7 cm"
         }
       ]
     },
     "inputs_before_event": {
-      "weather_severity": 0.2415,
-      "precipitation_mm": 9.8,
-      "snowfall_cm": 0.0,
-      "wind_kph": 27.7,
+      "weather_severity": 0.8027,
+      "precipitation_mm": 30.1,
+      "snowfall_cm": 18.69,
+      "wind_kph": 21.6,
       "news_risk_score": 0.0,
-      "carrier_reliability": 0.7913,
-      "lane_delay_rate": 0.2087
+      "carrier_reliability": 0.7837,
+      "lane_delay_rate": 0.2163
     },
     "actual_outcome": {
-      "total_flights": 98,
-      "delayed_flights": 31,
-      "delay_rate": 0.3163,
-      "mean_delay_minutes": 16.6,
-      "max_delay_minutes": 134.0,
+      "total_flights": 92,
+      "delayed_flights": 82,
+      "delay_rate": 0.8913,
+      "mean_delay_minutes": 98.9,
+      "max_delay_minutes": 574.0,
       "cause_breakdown_pct": {
-        "carrier": 20.5,
-        "weather": 28.6,
-        "nas_system": 22.9,
-        "late_aircraft": 28.0
+        "carrier": 0.0,
+        "weather": 100.0,
+        "nas_system": 0.0,
+        "late_aircraft": 0.0
       }
     },
-    "verdict": "FALSE_NEGATIVE"
+    "verdict": "TRUE_POSITIVE"
   }
 ]
