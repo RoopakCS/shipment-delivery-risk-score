@@ -19,6 +19,7 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <a href="#main" className="skip-link">Skip to main content</a>
       {/* Brand bar. Solid brown, gold rule underneath - no gradients. */}
       <header className="bg-ups-brown-800 shrink-0">
         <div className="h-14 px-5 flex items-center gap-3.5">
@@ -78,7 +79,7 @@ export default function Layout() {
           </div>
         </nav>
 
-        <main className="flex-1 min-w-0 px-6 py-6">
+        <main id="main" tabIndex={-1} className="flex-1 min-w-0 px-6 py-6">
           <div className="max-w-[1440px] space-y-5">
             <Outlet />
           </div>

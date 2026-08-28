@@ -30,7 +30,7 @@ export default function Backtest() {
         const a = e.actual_outcome;
         const hit = e.verdict.startsWith("TRUE");
         return (
-          <article key={e.id} className="bg-surface border border-border-warm rounded-[4px]">
+          <article key={e.id} className="bg-surface border border-border-warm rounded-[6px]">
             <header className="px-5 py-3 border-b border-border-warm flex items-center gap-3 flex-wrap">
               <h2 className="text-[13px] font-semibold text-ups-brown-800">
                 {e.airport_name} <span className="text-text-muted font-normal">({e.airport})</span>
@@ -78,7 +78,7 @@ export default function Backtest() {
               {/* Actual */}
               <div className="p-5 bg-surface-alt border-t md:border-t-0 md:border-l border-border-warm">
                 <p className="eyebrow">What actually happened</p>
-                <div className="text-[3.5rem] leading-[0.9] font-bold tabular-nums tracking-tight
+                <div className="text-[3.5rem] leading-[0.9] font-bold figure
                                 text-risk-critical mt-3">
                   {pct(a.delay_rate)}
                 </div>

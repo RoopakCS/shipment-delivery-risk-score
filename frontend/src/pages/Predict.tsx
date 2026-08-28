@@ -118,7 +118,7 @@ export default function Predict() {
         <div className="space-y-5">
           {error && (
             <div className="bg-surface border border-border-warm border-l-[3px] border-l-risk-critical
-                            rounded-[4px] p-4 text-[13px] text-risk-critical">
+                            rounded-[6px] p-4 text-[13px] text-risk-critical">
               {error}
             </div>
           )}
@@ -136,7 +136,7 @@ export default function Predict() {
 
           {result && (
             <>
-              <section className={`bg-surface border border-border-warm border-l-[3px] rounded-[4px] p-5
+              <section className={`bg-surface border border-border-warm border-l-[3px] rounded-[6px] p-5
                 ${onTime ? "border-l-risk-low" : "border-l-risk-critical"}`}>
                 <div className="flex items-center gap-6 flex-wrap">
                   <div>
@@ -187,7 +187,7 @@ export default function Predict() {
               </div>
 
               <div className="bg-surface border border-border-warm border-l-[3px] border-l-ups-gold
-                              rounded-[4px] p-5">
+                              rounded-[6px] p-5">
                 <p className="eyebrow">Recommended action</p>
                 <p className="text-[1.125rem] font-bold text-ups-brown-900 mt-2 tracking-tight">
                   {result.recommendation.action.replace(/_/g, " ")}

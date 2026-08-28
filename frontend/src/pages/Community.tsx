@@ -166,7 +166,7 @@ function PartnerCard({ partner, packages, selected, onSelect }: {
 
   return (
     <button onClick={onSelect} aria-pressed={selected}
-      className={"text-left border rounded-[4px] p-3.5 w-full cursor-pointer " +
+      className={"text-left border rounded-[6px] p-3.5 w-full cursor-pointer " +
         "transition-colors duration-200 " +
         (selected
           ? "border-ups-gold bg-ups-gold-soft"

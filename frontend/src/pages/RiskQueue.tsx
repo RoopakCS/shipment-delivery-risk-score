@@ -77,7 +77,7 @@ export default function RiskQueue() {
       {refreshing && (
         <div role="status"
           className="bg-ups-gold-soft border border-border-warm border-l-[3px] border-l-ups-gold
-                     rounded-[4px] px-4 py-2.5 text-[12.5px] text-ups-brown-800">
+                     rounded-[6px] px-4 py-2.5 text-[12.5px] text-ups-brown-800">
           Re-pulling live weather, news, traffic and flight data across every route.
           This normally takes 60&ndash;140 seconds.
         </div>

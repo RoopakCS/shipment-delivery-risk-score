@@ -31,7 +31,7 @@ export function RiskScore({ score, band, size = "md" }:
     lg: "text-[3.5rem] leading-[0.9]",
   }[size];
   return (
-    <span className={`${cls} font-bold tabular-nums tracking-tight ${bandText[band]}`}>
+    <span className={`${cls} figure font-bold ${bandText[band]}`}>
       {num(score)}
     </span>
   );
@@ -53,14 +53,14 @@ export function BandPill({ band }: { band: Band }) {
 export function StatCard({ label, value, caption, accent }:
   { label: string; value: ReactNode; caption?: string; accent?: string }) {
   return (
-    <div className="bg-surface border border-border-warm rounded-[4px] px-4 py-3">
+    <div className="bg-surface border border-border-warm rounded-[6px] px-4 py-3">
       <div className="eyebrow">{label}</div>
-      <div className={`text-[1.75rem] leading-tight font-bold tabular-nums tracking-tight mt-1.5
+      <div className={`text-[1.75rem] leading-tight font-bold figure mt-1.5
         ${accent ?? "text-ups-brown-800"}`}>
         {value}
       </div>
       {caption && (
-        <div className="text-[11px] leading-snug text-text-muted mt-1">{caption}</div>
+        <div className="caption leading-snug mt-1">{caption}</div>
       )}
     </div>
   );
@@ -70,7 +70,7 @@ export function Card({ title, subtitle, children, right, flush }:
   { title?: string; subtitle?: string; children: ReactNode;
     right?: ReactNode; flush?: boolean }) {
   return (
-    <section className="bg-surface border border-border-warm rounded-[4px]">
+    <section className="bg-surface border border-border-warm rounded-[6px]">
       {title && (
         <header className="px-5 py-3.5 border-b border-border-warm flex items-start justify-between gap-4">
           <div>
@@ -106,9 +106,9 @@ export function Button({ children, onClick, variant = "primary", disabled, type 
   variant?: "primary" | "secondary"; disabled?: boolean;
   type?: "button" | "submit";
 }) {
-  const base = "inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-[3px] " +
-    "text-[13px] font-semibold transition-colors duration-200 cursor-pointer " +
-    "disabled:opacity-50 disabled:cursor-not-allowed";
+  const base = "pressable inline-flex items-center justify-center gap-2 px-3.5 py-2 " +
+    "rounded-[3px] text-[13px] font-semibold cursor-pointer " +
+    "disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100";
   const styles = variant === "primary"
     ? "bg-ups-gold hover:bg-ups-gold-dark text-ups-brown-900"
     : "bg-surface border border-border-strong text-ups-brown-800 hover:bg-surface-alt";
@@ -134,13 +134,13 @@ export function DriverBars({ drivers }: { drivers: Driver[] }) {
         const width = (Math.abs(d.contribution) / max) * 100;
         return (
           <li key={d.feature} className="grid grid-cols-[1.25rem_1fr] gap-3">
-            <span className="text-[11px] font-bold text-text-faint tabular-nums pt-0.5">
+            <span className="text-[11px] font-bold text-text-faint figure pt-0.5">
               {String(i + 1).padStart(2, "0")}
             </span>
             <div>
               <div className="flex items-baseline justify-between gap-3">
                 <span className="text-[13px] font-semibold text-ups-brown-800">{d.label}</span>
-                <span className={`text-[11px] font-bold tabular-nums ${up ? "text-risk-high" : "text-risk-low"}`}>
+                <span className={`text-[11px] font-bold figure ${up ? "text-risk-high" : "text-risk-low"}`}>
                   {up ? "+" : "−"}{Math.abs(d.contribution).toFixed(2)}
                 </span>
               </div>
@@ -179,7 +179,7 @@ export function Skeleton({ rows = 5 }: { rows?: number }) {
 export function ErrorState({ error, onRetry }: { error: string; onRetry?: () => void }) {
   return (
     <div className="bg-surface border border-border-warm border-l-[3px] border-l-risk-critical
-                    rounded-[4px] p-6 max-w-xl">
+                    rounded-[6px] p-6 max-w-xl">
       <p className="text-[15px] font-semibold text-risk-critical">Could not reach the backend</p>
       <p className="text-[13px] text-text-muted mt-1.5">{error}</p>
       <code className="block text-[11.5px] bg-surface-sunk text-ups-brown-800 rounded-[3px]

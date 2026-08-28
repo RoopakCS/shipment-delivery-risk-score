@@ -45,7 +45,7 @@ export default function ShipmentDetail() {
 
       {/* Hero: score dominates, supporting figures sit in a measured row */}
       <section className={`bg-surface border border-border-warm border-l-[3px] ${bandBorder[band]}
-                          rounded-[4px] px-6 py-5`}>
+                          rounded-[6px] px-6 py-5`}>
         <div className="flex flex-wrap items-start gap-x-12 gap-y-6">
           <div className="min-w-[16rem]">
             <div className="flex items-center gap-2.5">
@@ -92,7 +92,7 @@ export default function ShipmentDetail() {
         <div className="space-y-5">
           {s.recommendation ? (
             <div className="bg-surface border border-border-warm border-l-[3px] border-l-ups-gold
-                            rounded-[4px] p-5">
+                            rounded-[6px] p-5">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="eyebrow">Recommended action</span>
                 <span className="text-[10px] font-bold uppercase tracking-[0.06em]
@@ -150,12 +150,12 @@ export default function ShipmentDetail() {
             {signalKeys.map((k) => {
               const sig = signals[k] ?? {};
               return (
-                <div key={k} className="border border-border-warm rounded-[4px] px-4 py-3">
+                <div key={k} className="border border-border-warm rounded-[6px] px-4 py-3">
                   <div className="flex items-center justify-between gap-2">
                     <span className="eyebrow">{k.replace(/_/g, " ")}</span>
                     <LiveBadge live={sig.is_live} />
                   </div>
-                  <div className="text-[1.75rem] font-bold tabular-nums tracking-tight
+                  <div className="text-[1.75rem] font-bold figure
                                   text-ups-brown-800 mt-1.5 leading-none">
                     {sig.severity != null ? num(sig.severity, 2) : "—"}
                   </div>
@@ -181,7 +181,7 @@ function Figure({ value, label, caption }:
   return (
     <div className="max-w-[8rem]">
       <p className="eyebrow">{label}</p>
-      <div className="text-[1.75rem] font-bold tabular-nums tracking-tight
+      <div className="text-[1.75rem] font-bold figure
                       text-ups-brown-800 mt-1.5 leading-none">
         {value}
       </div>

@@ -6,6 +6,7 @@ import Predict from "./pages/Predict";
 import Backtest from "./pages/Backtest";
 import ModelTrust from "./pages/ModelTrust";
 import Community from "./pages/Community";
+import NotFound from "./pages/NotFound";
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
           <Route path="backtest" element={<Backtest />} />
           <Route path="model" element={<ModelTrust />} />
           <Route path="community" element={<Community />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </BrowserRouter>

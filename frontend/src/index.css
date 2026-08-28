@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
 /*
@@ -39,7 +39,9 @@
   --color-risk-high: #C8401A;
   --color-risk-critical: #A00F14;
 
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Geist', system-ui, -apple-system, sans-serif;
+  /* Figures sit in columns all over this product - give them their own face. */
+  --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', monospace;
 
   /* Dense dashboard spacing rhythm (4/8 base) */
   --space-1: 0.25rem;
@@ -49,16 +51,21 @@
   --space-6: 1.5rem;
   --space-8: 2rem;
 
-  --radius-sharp: 3px;
-  --radius-panel: 4px;
+  /* Radius steps down as elements nest: panel > control > inner rule. */
+  --radius-panel: 6px;
+  --radius-control: 3px;
+  --radius-inner: 2px;
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     background-color: var(--color-surface-alt);
     color: var(--color-text-main);
     font-family: var(--font-sans);
-    font-feature-settings: "cv11", "ss01";
     -webkit-font-smoothing: antialiased;
   }
 
@@ -68,7 +75,12 @@
   }
 
   h1, h2, h3 {
-    letter-spacing: -0.015em;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
   }
 
   /* Keyboard focus must always be visible - gold, never removed. */
@@ -84,14 +96,60 @@
 }
 
 @layer utilities {
-  /* Micro-label: the Swiss workhorse. Used for every field caption. */
+  /*
+    Micro-label. Reserved for column headers and KPI labels, where a caption
+    must read as chrome rather than content. Sentence-case .caption below is
+    the default for everything else - all-caps everywhere flattens hierarchy.
+  */
   .eyebrow {
     font-size: 0.6875rem;
     line-height: 1;
     font-weight: 600;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--color-text-muted);
+  }
+
+  .caption {
+    font-size: 0.6875rem;
+    line-height: 1.1;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    color: var(--color-text-muted);
+  }
+
+  /* Figures: mono face, tabular, slightly tightened. */
+  .figure {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  /* Physical click feedback on every control. */
+  .pressable {
+    transition: background-color 200ms ease-out, border-color 200ms ease-out,
+                transform 120ms ease-out;
+  }
+  .pressable:active {
+    transform: scale(0.985);
+  }
+
+  /* Keyboard-only escape hatch past the sidebar. */
+  .skip-link {
+    position: absolute;
+    left: 0.5rem;
+    top: -3rem;
+    z-index: 50;
+    background: var(--color-ups-gold);
+    color: var(--color-ups-brown-900);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-control);
+    transition: top 150ms ease-out;
+  }
+  .skip-link:focus {
+    top: 0.5rem;
   }
 }
 
