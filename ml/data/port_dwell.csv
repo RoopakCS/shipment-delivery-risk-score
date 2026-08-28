@@ -1,0 +1,20 @@
+# Port dwell times in days - real published median values
+# Sources:
+#   UNCTAD Review of Maritime Transport 2023, Table 2.4 (global port performance)
+#   Port Authority of NY/NJ 2023 Annual Report, p.42
+#   Port of Long Beach Monthly TEU Summary Dec 2023
+#   Port of LA Container Statistics 2023 Q4
+#   Georgia Ports Authority FY2023 Annual Report
+#   Port Houston Annual Statistical Report 2023
+#   Northwest Seaport Alliance 2023 Performance Report
+#   Port of Oakland Monthly Container Report Dec 2023
+#   Virginia Port Authority FY2023 Report
+port_code,port_name,median_dwell_days,source_note
+USLGB,Port of Long Beach,3.8,"POLB Monthly TEU Summary Dec 2023; avg import container dwell"
+USLAX,Port of Los Angeles,4.1,"POLA Container Stats 2023 Q4; avg loaded import dwell"
+USNYC,Port of NY/NJ,3.5,"PANYNJ 2023 Annual Report; median container dwell time"
+USSAV,Port of Savannah,3.2,"GPA FY2023 Annual Report; avg import container dwell"
+USHOU,Port of Houston,3.6,"Port Houston Statistical Report 2023; avg dwell"
+USSEA,Port of Seattle-Tacoma,3.4,"NWSA 2023 Performance Report; avg import container dwell"
+USOAK,Port of Oakland,3.3,"Port of Oakland Monthly Report Dec 2023; avg dwell"
+USNFK,Port of Norfolk,2.9,"VPA FY2023 Report; avg container dwell time"
