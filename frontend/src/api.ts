@@ -1,59 +1,42 @@
+import axios from "axios";
 import type {
-  StatsResponse,
-  ShipmentSummary,
-  ShipmentDetail,
-  HealthResponse,
-  RefreshResponse,
-  BacktestEvent,
-  ModelMetrics
-} from './types';
+  BacktestEvent, Health, Metrics, PredictRequest, PredictResult,
+  RefreshResult, ShipmentDetail, ShipmentSummary, Stats,
+} from "./types";
 
-const API_BASE = 'http://localhost:8000/api';
+const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
-export class ApiError extends Error {
-  status: number;
-  constructor(status: number, message: string) {
-    super(message);
-    this.status = status;
-    this.name = 'ApiError';
-  }
-}
+const client = axios.create({ baseURL: BASE, timeout: 300_000 });
 
-async function fetcher(endpoint: string, options?: RequestInit) {
-  const res = await fetch(`${API_BASE}${endpoint}`, options);
-  if (!res.ok) {
-    throw new ApiError(res.status, `API Error: ${res.statusText}`);
-  }
-  return res.json();
+export interface ShipmentFilters {
+  band?: string; mode?: string; min_score?: number; limit?: number;
 }
 
 export const api = {
-  getStats: () => fetcher('/stats') as Promise<StatsResponse>,
-  
-  getShipments: (params?: { limit?: number; min_score?: number; mode?: string; band?: string; sort?: string }) => {
-    const url = new URL(`${API_BASE}/shipments`);
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== '') {
-          url.searchParams.append(key, String(value));
-        }
-      });
-    }
-    return fetch(url.toString()).then(res => {
-      if (!res.ok) throw new ApiError(res.status, res.statusText);
-      return res.json() as Promise<ShipmentSummary[]>;
-    });
+  stats: () => client.get<Stats>("/api/stats").then(r => r.data),
+  health: () => client.get<Health>("/api/health").then(r => r.data),
+
+  shipments: (f: ShipmentFilters = {}) => {
+    const p = new URLSearchParams();
+    if (f.band) p.set("band", f.band);
+    if (f.mode) p.set("mode", f.mode);
+    if (f.min_score != null) p.set("min_score", String(f.min_score));
+    p.set("limit", String(f.limit ?? 50));
+    return client.get<ShipmentSummary[]>(`/api/shipments?${p}`).then(r => r.data);
   },
 
-  getShipmentDetail: (id: string) => fetcher(`/shipments/${id}`) as Promise<ShipmentDetail>,
+  shipment: (id: string) =>
+    client.get<ShipmentDetail>(`/api/shipments/${id}`).then(r => r.data),
 
-  refreshSignals: () => fetcher('/refresh', { method: 'POST' }) as Promise<RefreshResponse>,
+  refresh: () => client.post<RefreshResult>("/api/refresh").then(r => r.data),
 
-  getHealth: () => fetcher('/health') as Promise<HealthResponse>,
+  metrics: () => client.get<Metrics>("/api/model/metrics").then(r => r.data),
 
-  getModelMetrics: () => fetcher('/model/metrics') as Promise<ModelMetrics>,
+  backtests: () => client.get<BacktestEvent[]>("/api/backtest").then(r => r.data),
 
-  getBacktestEvents: () => fetcher('/backtest') as Promise<BacktestEvent[]>,
+  locations: () =>
+    client.get<{ code: string; name: string }[]>("/api/locations").then(r => r.data),
 
-  getBacktestEvent: (id: string) => fetcher(`/backtest/${id}`) as Promise<BacktestEvent>
+  predict: (body: PredictRequest) =>
+    client.post<PredictResult>("/api/predict", body).then(r => r.data),
 };

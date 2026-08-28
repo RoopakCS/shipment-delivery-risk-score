@@ -1,150 +1,135 @@
-import React, { useEffect, useState } from 'react';
-import { api } from '../api';
-import type { ModelMetrics } from '../types';
-import { StatCard } from '../components/shared/StatCard';
-import { formatNumber } from '../utils/formatters';
-import { Activity, ShieldAlert, AlertCircle, Database, CheckCircle2 } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
+import { useCallback, useEffect, useState } from "react";
+import {
+  Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer,
+  Tooltip, XAxis, YAxis,
+} from "recharts";
+import { api } from "../api";
+import type { Metrics } from "../types";
+import { Card, ErrorState, Skeleton, StatCard } from "../components/ui";
 
-export const ModelTrust: React.FC = () => {
-  const [metrics, setMetrics] = useState<ModelMetrics | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export default function ModelTrust() {
+  const [m, setM] = useState<Metrics | null>(null);
+  const [error, setError] = useState("");
 
-  useEffect(() => {
-    setLoading(true);
-    api.getModelMetrics()
-      .then(setMetrics)
-      .catch(err => setError(err.message))
-      .finally(() => setLoading(false));
+  const load = useCallback(() => {
+    setError("");
+    api.metrics().then(setM).catch((e) => setError(e.message));
   }, []);
 
-  if (loading) {
-    return <div className="text-text-muted flex items-center gap-2 p-8"><Activity className="animate-spin" /> Loading model metrics...</div>;
-  }
+  useEffect(load, [load]);
 
-  if (error || !metrics) {
-    return <div className="text-risk-critical bg-risk-critical/10 p-4 rounded-md">Error loading model metrics: {error}</div>;
-  }
+  if (error) return <ErrorState error={error} onRetry={load} />;
+  if (!m) return <Skeleton rows={10} />;
 
-  // Format calibration curve data
-  const calData = (metrics.calibration_curves?.air?.prob_pred || []).map((pred: number, i: number) => ({
-    predicted: pred,
-    actual: metrics.calibration_curves?.air?.prob_true[i] || 0,
-    ideal: pred
+  const cal = m.air_calibration ?? {};
+  const calData = (cal.prob_pred ?? []).map((p: number, i: number) => ({
+    predicted: Number((p * 100).toFixed(1)),
+    observed: Number(((cal.prob_true?.[i] ?? 0) * 100).toFixed(1)),
+    ideal: Number((p * 100).toFixed(1)),
   }));
 
-  // Format SHAP importance data
-  const shapData = Object.entries(metrics.air_shap_importance || {})
-    .map(([feature, importance]) => ({
-      feature,
-      importance: importance as number
-    }))
-    .sort((a, b) => b.importance - a.importance)
-    .slice(0, 10);
+  const shap = Object.entries(m.air_shap_importance ?? {})
+    .map(([feature, value]) => ({ feature: feature.replace(/_/g, " "), value: Number(value) }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 12);
 
   return (
-    <div className="space-y-8 max-w-6xl">
+    <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-bold text-ups-brown-800 flex items-center gap-2 mb-2">
-          <ShieldAlert size={24} className="text-ups-gold" />
-          Model Trust & Transparency
-        </h1>
-        <p className="text-text-muted max-w-3xl">
-          We don't hide our math. Here are the precise performance metrics, calibration curves, and feature importance weightings for the live models currently scoring shipments.
+        <h2 className="text-2xl font-bold text-ups-brown-800">Model Trust</h2>
+        <p className="text-sm text-text-muted mt-0.5">
+          How well the model performs, and what it is built on.
         </p>
       </div>
 
-      {/* Provenance Panel */}
-      <div className="bg-ups-brown-50 border border-ups-brown-200 rounded-md p-6">
-        <h3 className="text-sm font-bold text-ups-brown-800 uppercase tracking-wider mb-4 flex items-center gap-2">
-          <Database size={18} /> Data Provenance Statement
-        </h3>
-        <div className="grid grid-cols-3 gap-6 text-sm">
-          <div className="bg-white p-4 rounded border border-ups-brown-100">
-            <h4 className="font-bold text-ups-brown-900 mb-2">Weather & News</h4>
-            <p className="text-text-muted">Real recorded Open-Meteo archive data and GDELT global news disruptions. 100% historically accurate.</p>
-          </div>
-          <div className="bg-white p-4 rounded border border-ups-brown-100">
-            <h4 className="font-bold text-ups-brown-900 mb-2">Flight Records</h4>
-            <p className="text-text-muted">Simulated based on historical statistical baselines. Real BTS flight data API connection was blocked during training.</p>
-          </div>
-          <div className="bg-white p-4 rounded border border-ups-brown-100">
-            <h4 className="font-bold text-ups-brown-900 mb-2">Live Signals</h4>
-            <p className="text-text-muted">Fetched dynamically at runtime via live API connections (AviationStack, TomTom, Open-Meteo).</p>
-          </div>
-        </div>
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <StatCard label="ROC-AUC" value={Number(m.air_roc_auc ?? 0).toFixed(3)}
+          caption="0.5 is guessing. Higher is better." />
+        <StatCard label="Lift over baseline" value={"+" + Number(m.air_lift_roc_auc ?? 0).toFixed(3)}
+          caption="how much better than assuming all on time" />
+        <StatCard label="Brier score" value={Number(m.air_brier ?? 0).toFixed(3)}
+          caption="probability error. Lower is better." />
+        <StatCard label="Delay error" value={Number(m.air_reg_mae ?? 0).toFixed(1) + " min"}
+          caption="average miss on predicted lateness" />
+        <StatCard label="Actual late rate" value={((m.air_breach_rate ?? 0) * 100).toFixed(1) + "%"}
+          caption="share of flights that really were late" />
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
-        {/* Calibration Curve */}
-        <div className="bg-surface border border-border-warm rounded-md p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-ups-brown-800 mb-2">Model Calibration (Air)</h2>
-          <p className="text-sm text-text-muted mb-6 font-medium bg-gray-50 p-2 rounded border border-gray-100">
-            <AlertCircle size={14} className="inline mr-1 text-ups-gold-dark" /> 
-            Of the shipments we scored 7 (70%), about 70% actually breached.
-          </p>
-          
+      <div className="grid lg:grid-cols-2 gap-5">
+        <Card title="Calibration"
+              subtitle="Of the shipments we scored 7, about 70% should actually breach">
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={calData} margin={{ top: 5, right: 5, bottom: 20, left: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="predicted" type="number" domain={[0, 1]} tickCount={5} tickFormatter={v => formatNumber(v, 2)} />
-                <YAxis domain={[0, 1]} tickCount={5} tickFormatter={v => formatNumber(v, 2)} />
-                <RechartsTooltip formatter={(value: any) => formatNumber(value as number, 3)} />
-                <Line type="monotone" dataKey="ideal" stroke="#A3A3A3" strokeDasharray="5 5" strokeWidth={2} dot={false} name="Perfect Calibration" />
-                <Line type="monotone" dataKey="actual" stroke="#351C15" strokeWidth={3} dot={{ r: 4, fill: '#351C15' }} name="Actual Observed" />
+              <LineChart data={calData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E3DED8" />
+                <XAxis dataKey="predicted" tick={{ fontSize: 11 }}
+                  label={{ value: "Predicted %", position: "insideBottom", offset: -4, fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }}
+                  label={{ value: "Observed %", angle: -90, position: "insideLeft", fontSize: 11 }} />
+                <Tooltip />
+                <Line type="monotone" dataKey="ideal" stroke="#8B6A4F" strokeDasharray="5 5"
+                  dot={false} name="Ideal" />
+                <Line type="monotone" dataKey="observed" stroke="#351C15" strokeWidth={2}
+                  dot={{ r: 3 }} name="Our model" />
               </LineChart>
             </ResponsiveContainer>
           </div>
-        </div>
+          <p className="text-xs text-text-muted mt-2">
+            The dashed line is perfect calibration. The closer our line sits to it,
+            the more trustworthy the probabilities are.
+          </p>
+        </Card>
 
-        {/* Feature Importance */}
-        <div className="bg-surface border border-border-warm rounded-md p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-ups-brown-800 mb-2">Global Feature Importance</h2>
-          <p className="text-sm text-text-muted mb-6">Which factors matter most across all shipments (SHAP).</p>
-          
+        <Card title="What the model relies on"
+              subtitle="Average SHAP importance across all predictions">
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={shapData} layout="vertical" margin={{ top: 5, right: 30, left: 80, bottom: 5 }}>
-                <XAxis type="number" hide />
-                <YAxis dataKey="feature" type="category" width={100} tick={{ fontSize: 10, fill: 'var(--color-text-muted)' }} />
-                <RechartsTooltip formatter={(value: any) => formatNumber(value as number, 3)} />
-                <Bar dataKey="importance" radius={[0, 4, 4, 0]}>
-                  {shapData.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={index === 0 ? 'var(--color-ups-gold)' : 'var(--color-ups-brown-600)'} />
-                  ))}
-                </Bar>
+              <BarChart data={shap} layout="vertical" margin={{ left: 60 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E3DED8" />
+                <XAxis type="number" tick={{ fontSize: 11 }} />
+                <YAxis type="category" dataKey="feature" width={130} tick={{ fontSize: 10 }} />
+                <Tooltip />
+                <Bar dataKey="value" fill="#5F3C1E" radius={[0, 3, 3, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </Card>
       </div>
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-4 gap-4">
-        <StatCard 
-          label="ROC-AUC (Air)" 
-          value={formatNumber(metrics.air_roc_auc, 3)} 
-          subValue={`vs Baseline: ${formatNumber(metrics.air_baseline_roc_auc, 3)}`}
-          icon={<CheckCircle2 size={18} />}
-        />
-        <StatCard 
-          label="Brier Score" 
-          value={formatNumber(metrics.air_brier, 3)} 
-          subValue="Lower is better"
-        />
-        <StatCard 
-          label="MAE (Delay Regressor)" 
-          value={formatNumber(metrics.air_reg_mae, 2)} 
-          subValue="Hours absolute error"
-        />
-        <StatCard 
-          label="Precision" 
-          value={formatNumber(metrics.air_precision, 3)} 
-          subValue={`Recall: ${formatNumber(metrics.air_recall, 3)}`}
-        />
-      </div>
+      <Card title="Data provenance" subtitle="What is real and what is simulated">
+        <div className="grid md:grid-cols-2 gap-5 text-sm">
+          <div>
+            <h4 className="font-semibold text-risk-low mb-2">Real data</h4>
+            <ul className="space-y-1 text-text-main">
+              <li>&bull; Recorded weather &mdash; Open-Meteo archive, Jan&ndash;Feb 2024</li>
+              <li>&bull; Live weather forecasts &mdash; fetched at runtime</li>
+              <li>&bull; Live traffic &mdash; TomTom</li>
+              <li>&bull; Live flight status &mdash; AviationStack</li>
+              <li>&bull; Live news and geopolitical signals &mdash; GDELT</li>
+              <li>&bull; Airports, routes and distances</li>
+              <li>&bull; The storms the model learned from: Chicago 9 Jan,
+                  Boston 7 Jan, Newark 13 Feb 2024</li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-semibold text-ups-brown-600 mb-2">Simulated data</h4>
+            <ul className="space-y-1 text-text-main">
+              <li>&bull; Individual flight records &mdash; delays are generated
+                  <em> from the real recorded weather</em>, not invented</li>
+              <li>&bull; Shipment records &mdash; per-shipment carrier data is not public</li>
+              <li>&bull; Ocean and ground delay labels &mdash; no free public dataset exists</li>
+            </ul>
+            <p className="mt-3 text-text-muted">
+              Swap in real historical shipments and retrain. The pipeline does not change.
+            </p>
+          </div>
+        </div>
+        <p className="text-xs text-text-muted mt-4 pt-3 border-t border-border-warm">
+          Trained on {Number(m.air_n_train ?? 0).toLocaleString()} flights, tested on{" "}
+          {Number(m.air_n_test ?? 0).toLocaleString()} held out by date &mdash; a
+          time-based split, because predicting the future from a random split would leak.
+        </p>
+      </Card>
     </div>
   );
-};
+}

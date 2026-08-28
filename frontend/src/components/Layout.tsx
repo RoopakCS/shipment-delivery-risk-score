@@ -1,69 +1,67 @@
-import React from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
-import { Box, LayoutDashboard, Target, Users, ShieldAlert } from 'lucide-react';
-import { cn } from './shared/BandPill';
+import { NavLink, Outlet } from "react-router-dom";
+import { Activity, BarChart3, History, Package, Users } from "lucide-react";
+import { useEffect, useState } from "react";
+import { api } from "../api";
+import type { Stats } from "../types";
 
-const navItems = [
-  { path: '/', label: 'Risk Queue', icon: <LayoutDashboard size={18} /> },
-  { path: '/backtest', label: 'Backtest', icon: <Target size={18} /> },
-  { path: '/model', label: 'Model Trust', icon: <ShieldAlert size={18} /> },
-  { path: '/community', label: 'Community', icon: <Users size={18} /> },
+const NAV = [
+  { to: "/", label: "Risk Queue", icon: Package, end: true },
+  { to: "/predict", label: "New Shipment", icon: Activity },
+  { to: "/backtest", label: "Backtest", icon: History },
+  { to: "/model", label: "Model Trust", icon: BarChart3 },
+  { to: "/community", label: "Community Delivery", icon: Users },
 ];
 
-export const Layout: React.FC = () => {
+export default function Layout() {
+  const [stats, setStats] = useState<Stats | null>(null);
+  useEffect(() => { api.stats().then(setStats).catch(() => {}); }, []);
+  const atRisk = stats ? stats.high + stats.critical : null;
+
   return (
-    <div className="flex h-screen w-full flex-col overflow-hidden bg-surface-alt font-sans">
-      {/* Top Bar */}
-      <header className="flex h-14 shrink-0 items-center bg-ups-brown-800 px-6 shadow-sm z-10 relative">
-        <div className="absolute left-0 top-0 h-full w-1 bg-ups-gold"></div>
-        <div className="flex items-center gap-3">
-          <Box className="text-ups-gold" size={24} />
-          <h1 className="text-lg font-semibold tracking-wide text-white">
+    <div className="min-h-screen flex flex-col">
+      <header className="bg-ups-brown-800 border-b-4 border-ups-gold">
+        <div className="px-6 py-3 flex items-center gap-3">
+          <div className="bg-ups-gold text-ups-brown-900 font-black px-2 py-1 rounded text-sm">
+            UPS
+          </div>
+          <h1 className="text-white font-semibold tracking-tight">
             Shipment Delivery Risk Score
           </h1>
+          <span className="text-ups-brown-400 text-xs ml-auto">
+            Predictive supply-chain intelligence
+          </span>
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <aside className="w-56 shrink-0 bg-ups-brown-600 text-white shadow-inner flex flex-col justify-between">
-          <nav className="flex flex-col py-4">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-3 px-5 py-3 text-sm font-medium transition-colors border-l-4",
-                    isActive
-                      ? "border-ups-gold bg-ups-brown-800 text-white"
-                      : "border-transparent text-gray-300 hover:bg-ups-brown-800/50 hover:text-white"
-                  )
-                }
-              >
-                {item.icon}
-                {item.label}
-              </NavLink>
+      <div className="flex flex-1">
+        <nav className="w-56 bg-ups-brown-600 shrink-0">
+          <ul className="py-3">
+            {NAV.map(({ to, label, icon: Icon, end }) => (
+              <li key={to}>
+                <NavLink to={to} end={end}
+                  className={({ isActive }) =>
+                    `flex items-center gap-2.5 px-4 py-2.5 text-sm border-l-4 transition-colors
+                     ${isActive
+                       ? "border-ups-gold bg-ups-brown-800 text-white font-semibold"
+                       : "border-transparent text-ups-gold-soft/80 hover:bg-ups-brown-800/50"}`}>
+                  <Icon size={16} />
+                  <span className="flex-1">{label}</span>
+                  {to === "/" && atRisk != null && atRisk > 0 && (
+                    <span className="bg-risk-high text-white text-[10px] font-bold
+                                     px-1.5 rounded-full tabular-nums">{atRisk}</span>
+                  )}
+                </NavLink>
+              </li>
             ))}
-          </nav>
-          
-          <div className="p-4 text-xs text-gray-400 border-t border-ups-brown-400/30">
-            <p>V1.0.0-prototype</p>
-          </div>
-        </aside>
+          </ul>
+        </nav>
 
-        {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto p-8 relative flex flex-col">
-          <div className="flex-1 max-w-7xl mx-auto w-full">
-            <Outlet />
-          </div>
-          
-          {/* Footer */}
-          <footer className="mt-12 py-4 text-center text-sm text-text-muted border-t border-border-warm w-full max-w-7xl mx-auto">
-            Prototype - not an official UPS product.
-          </footer>
-        </main>
+        <main className="flex-1 p-6 max-w-[1500px]"><Outlet /></main>
       </div>
+
+      <footer className="px-6 py-3 text-xs text-text-muted border-t border-border-warm bg-surface">
+        Prototype — not an official UPS product.
+      </footer>
     </div>
   );
-};
+}

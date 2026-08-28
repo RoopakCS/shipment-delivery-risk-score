@@ -1,111 +1,172 @@
+/**
+ * Community Delivery Consolidation - CONCEPT MODULE, FRONTEND ONLY.
+ *
+ * Representative data, not live operational data. In production, clusters would
+ * come from the routing system, partners from a verification service, and
+ * settlement from finance.
+ *
+ * The idea: sending a driver into a residential town to make 20 separate stops
+ * is slow and expensive. Dropping all 20 with one verified local partner who
+ * completes the last leg replaces twenty stops with one.
+ */
+
 export interface Partner {
   id: string;
   name: string;
-  initials: string;
   verified: boolean;
   rating: number;
-  completed_deliveries: number;
-  capacity_packages: number;
-  distance_from_center_km: number;
-  per_package_fee_usd: number;
+  completedDeliveries: number;
+  /** How many packages they can physically hold. */
+  capacity: number;
+  distanceKm: number;
+  /** What we pay them, per package. */
+  feePerPackage: number;
 }
 
 export interface Cluster {
   id: string;
-  name: string;
-  package_count: number;
-  total_weight_kg: number;
-  delivery_window: string;
-  direct_cost_usd: number;
-  direct_distance_km: number;
-  direct_driver_hours: number;
-  co2_kg_per_km: number;
+  town: string;
+  city: string;
+  packages: number;
+  totalWeightKg: number;
+  window: string;
+  /** Door-to-door cost per package when a driver makes every stop. */
+  directCostPerPackage: number;
+  /** Kilometres the van saves by making one stop instead of many. */
+  kmSavedIfConsolidated: number;
+  /** Driver hours saved. */
+  hoursSavedIfConsolidated: number;
   partners: Partner[];
 }
 
-// Concept Demonstration Data
-export const mockClusters: Cluster[] = [
+/** Grams of CO2 per km for a delivery van, used for the emissions estimate. */
+export const CO2_PER_KM_G = 250;
+
+export const CLUSTERS: Cluster[] = [
   {
-    id: "CL-001",
-    name: "Anna Nagar, Chennai",
-    package_count: 20,
-    total_weight_kg: 85,
-    delivery_window: "Today, 2PM - 6PM",
-    direct_cost_usd: 45.00,
-    direct_distance_km: 32.5,
-    direct_driver_hours: 2.5,
-    co2_kg_per_km: 0.15,
+    id: "anna-nagar",
+    town: "Anna Nagar",
+    city: "Chennai",
+    packages: 20,
+    totalWeightKg: 96,
+    window: "Today, 09:00 - 18:00",
+    directCostPerPackage: 0.5,
+    kmSavedIfConsolidated: 14.2,
+    hoursSavedIfConsolidated: 2.4,
     partners: [
-      {
-        id: "P-101",
-        name: "Arun Kumar Local Hub",
-        initials: "AK",
-        verified: true,
-        rating: 4.9,
-        completed_deliveries: 1240,
-        capacity_packages: 25, // Can take the whole cluster
-        distance_from_center_km: 1.2,
-        per_package_fee_usd: 0.50
-      },
-      {
-        id: "P-102",
-        name: "Meena Stores",
-        initials: "MS",
-        verified: true,
-        rating: 4.7,
-        completed_deliveries: 89,
-        capacity_packages: 12, // Partial capacity
-        distance_from_center_km: 0.8,
-        per_package_fee_usd: 0.65
-      }
-    ]
+      { id: "p1", name: "Lakshmi Stores", verified: true, rating: 4.8,
+        completedDeliveries: 412, capacity: 25, distanceKm: 0.6, feePerPackage: 0.25 },
+      { id: "p2", name: "Ravi Kumar", verified: true, rating: 4.6,
+        completedDeliveries: 198, capacity: 18, distanceKm: 1.1, feePerPackage: 0.22 },
+      { id: "p3", name: "Green Mart", verified: false, rating: 4.1,
+        completedDeliveries: 47, capacity: 30, distanceKm: 1.8, feePerPackage: 0.20 },
+    ],
   },
   {
-    id: "CL-002",
-    name: "T Nagar Commercial",
-    package_count: 35,
-    total_weight_kg: 140,
-    delivery_window: "Tomorrow, 9AM - 1PM",
-    direct_cost_usd: 72.00,
-    direct_distance_km: 48.0,
-    direct_driver_hours: 4.0,
-    co2_kg_per_km: 0.15,
+    id: "adyar",
+    town: "Adyar",
+    city: "Chennai",
+    packages: 34,
+    totalWeightKg: 171,
+    window: "Today, 10:00 - 19:00",
+    directCostPerPackage: 0.55,
+    kmSavedIfConsolidated: 21.7,
+    hoursSavedIfConsolidated: 3.6,
     partners: [
-      {
-        id: "P-201",
-        name: "Balaji Logistics",
-        initials: "BL",
-        verified: true,
-        rating: 4.8,
-        completed_deliveries: 5600,
-        capacity_packages: 50,
-        distance_from_center_km: 2.5,
-        per_package_fee_usd: 0.40
-      }
-    ]
+      { id: "p4", name: "Adyar Book House", verified: true, rating: 4.9,
+        completedDeliveries: 673, capacity: 40, distanceKm: 0.4, feePerPackage: 0.26 },
+      { id: "p5", name: "Priya Traders", verified: true, rating: 4.4,
+        completedDeliveries: 121, capacity: 20, distanceKm: 1.4, feePerPackage: 0.21 },
+    ],
   },
   {
-    id: "CL-003",
-    name: "Velachery Residential",
-    package_count: 15,
-    total_weight_kg: 42,
-    delivery_window: "Today, 5PM - 8PM",
-    direct_cost_usd: 35.00,
-    direct_distance_km: 22.0,
-    direct_driver_hours: 1.8,
-    co2_kg_per_km: 0.15,
+    id: "velachery",
+    town: "Velachery",
+    city: "Chennai",
+    packages: 27,
+    totalWeightKg: 133,
+    window: "Tomorrow, 09:00 - 17:00",
+    directCostPerPackage: 0.52,
+    kmSavedIfConsolidated: 18.3,
+    hoursSavedIfConsolidated: 3.1,
     partners: [
-      {
-        id: "P-301",
-        name: "Suresh Drop Point",
-        initials: "SD",
-        verified: true,
-        rating: 4.5,
-        completed_deliveries: 412,
-        capacity_packages: 10, // Partial capacity
-        distance_from_center_km: 1.5,
-        per_package_fee_usd: 0.55
-      }
-    ]
-  }
+      { id: "p6", name: "Velachery Mini Mart", verified: true, rating: 4.7,
+        completedDeliveries: 355, capacity: 22, distanceKm: 0.9, feePerPackage: 0.24 },
+      { id: "p7", name: "Suresh Electronics", verified: true, rating: 4.3,
+        completedDeliveries: 89, capacity: 12, distanceKm: 2.2, feePerPackage: 0.19 },
+    ],
+  },
+  {
+    id: "besant-nagar",
+    town: "Besant Nagar",
+    city: "Chennai",
+    packages: 15,
+    totalWeightKg: 68,
+    window: "Tomorrow, 11:00 - 18:00",
+    directCostPerPackage: 0.48,
+    kmSavedIfConsolidated: 10.6,
+    hoursSavedIfConsolidated: 1.8,
+    partners: [
+      { id: "p8", name: "Beach Road Pharmacy", verified: true, rating: 4.5,
+        completedDeliveries: 264, capacity: 16, distanceKm: 0.7, feePerPackage: 0.23 },
+    ],
+  },
 ];
+
+export interface Assignment { clusterId: string; partnerId: string }
+
+export interface ClusterEconomics {
+  assignedPackages: number;
+  remainingPackages: number;
+  directCost: number;
+  consolidatedCost: number;
+  saving: number;
+  savingPct: number;
+  kmSaved: number;
+  hoursSaved: number;
+  co2SavedKg: number;
+}
+
+/**
+ * Work out the real economics of assigning a cluster to a partner.
+ *
+ * Partners often cannot take the whole cluster. Anything over their capacity
+ * still goes out door-to-door at full price, and the maths must reflect that
+ * rather than pretending everything fits.
+ */
+export function economics(cluster: Cluster, partner: Partner | null): ClusterEconomics {
+  const directCost = cluster.packages * cluster.directCostPerPackage;
+
+  if (!partner) {
+    return {
+      assignedPackages: 0, remainingPackages: cluster.packages,
+      directCost, consolidatedCost: directCost,
+      saving: 0, savingPct: 0, kmSaved: 0, hoursSaved: 0, co2SavedKg: 0,
+    };
+  }
+
+  const assigned = Math.min(cluster.packages, partner.capacity);
+  const remaining = cluster.packages - assigned;
+  const ratio = assigned / cluster.packages;
+
+  // Consolidated packages cost the partner fee plus one single van drop;
+  // anything left over is still full-price door-to-door.
+  const singleDropCost = cluster.directCostPerPackage;
+  const consolidatedCost =
+    assigned * partner.feePerPackage + singleDropCost + remaining * cluster.directCostPerPackage;
+
+  const saving = directCost - consolidatedCost;
+  const kmSaved = cluster.kmSavedIfConsolidated * ratio;
+
+  return {
+    assignedPackages: assigned,
+    remainingPackages: remaining,
+    directCost,
+    consolidatedCost,
+    saving,
+    savingPct: directCost > 0 ? saving / directCost : 0,
+    kmSaved,
+    hoursSaved: cluster.hoursSavedIfConsolidated * ratio,
+    co2SavedKg: (kmSaved * CO2_PER_KM_G) / 1000,
+  };
+}
