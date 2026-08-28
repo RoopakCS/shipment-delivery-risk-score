@@ -84,10 +84,10 @@ export default function RiskQueue() {
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <StatCard label="Active" value={stats?.total_active ?? "—"} caption="shipments in transit" />
-        <StatCard label="Critical" value={stats?.critical ?? "—"} accent="text-risk-critical" caption="escalate now" />
-        <StatCard label="High" value={stats?.high ?? "—"} accent="text-risk-high" caption="intervene today" />
-        <StatCard label="Medium" value={stats?.medium ?? "—"} accent="text-risk-medium" caption="monitor only" />
+        <StatCard label="Active" value={stats?.total_active?.toLocaleString() ?? "—"} caption="shipments in transit" />
+        <StatCard label="Critical" value={stats?.critical?.toLocaleString() ?? "—"} accent="text-risk-critical" caption="escalate now" />
+        <StatCard label="High" value={stats?.high?.toLocaleString() ?? "—"} accent="text-risk-high" caption="intervene today" />
+        <StatCard label="Medium" value={stats?.medium?.toLocaleString() ?? "—"} accent="text-risk-medium" caption="monitor only" />
         <StatCard label="Value at risk" value={stats ? usd(stats.at_risk_value_usd) : "—"} caption="in high + critical" />
         <StatCard label="Flight API" value={flight?.calls_remaining ?? "—"}
           caption={`live calls left of ${flight?.hard_cap ?? 60} per month`} />

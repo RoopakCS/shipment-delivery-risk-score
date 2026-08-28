@@ -31,7 +31,7 @@ export function RiskScore({ score, band, size = "md" }:
     lg: "text-[3.5rem] leading-[0.9]",
   }[size];
   return (
-    <span className={`${cls} figure font-bold ${bandText[band]}`}>
+    <span className={`${cls} figure-mono font-bold ${bandText[band]}`}>
       {num(score)}
     </span>
   );
@@ -134,13 +134,13 @@ export function DriverBars({ drivers }: { drivers: Driver[] }) {
         const width = (Math.abs(d.contribution) / max) * 100;
         return (
           <li key={d.feature} className="grid grid-cols-[1.25rem_1fr] gap-3">
-            <span className="text-[11px] font-bold text-text-faint figure pt-0.5">
+            <span className="text-[11px] font-bold text-text-faint figure-mono pt-0.5">
               {String(i + 1).padStart(2, "0")}
             </span>
             <div>
               <div className="flex items-baseline justify-between gap-3">
                 <span className="text-[13px] font-semibold text-ups-brown-800">{d.label}</span>
-                <span className={`text-[11px] font-bold figure ${up ? "text-risk-high" : "text-risk-low"}`}>
+                <span className={`text-[11px] font-bold figure-mono ${up ? "text-risk-high" : "text-risk-low"}`}>
                   {up ? "+" : "−"}{Math.abs(d.contribution).toFixed(2)}
                 </span>
               </div>

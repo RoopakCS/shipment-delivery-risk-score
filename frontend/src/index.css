@@ -118,8 +118,19 @@
     color: var(--color-text-muted);
   }
 
-  /* Figures: mono face, tabular, slightly tightened. */
+  /*
+    Two figure faces. Mono suits bare numerals - risk scores, contributions -
+    where the fixed cell reads as an instrument. It does NOT suit currency:
+    mono gives every comma its own cell, so "$1,922,309" visibly gaps. Money
+    and counts stay on the sans face with tabular figures, which aligns
+    columns without spacing the separators out.
+  */
   .figure {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  .figure-mono {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.02em;
