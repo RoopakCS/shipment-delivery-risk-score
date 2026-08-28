@@ -14,6 +14,9 @@ import os
 import sys
 import time
 
+from dotenv import load_dotenv
+load_dotenv()
+
 import httpx
 
 from ml.config import (
