@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import math
 import logging
 import time
 from contextlib import asynccontextmanager
@@ -14,6 +15,8 @@ from datetime import datetime
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Query
+from pydantic import BaseModel
+import pandas as pd
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import select
 
@@ -41,6 +44,7 @@ from backend.schemas import (
     StatsResponse,
 )
 from backend.scoring import ScoringEngine
+from ml.config import DATA_DIR as ML_DATA_DIR
 from ml.features import FEATURE_NAMES
 
 logging.basicConfig(level=logging.INFO)
@@ -487,3 +491,165 @@ async def get_backtest(event_id: str) -> dict:
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# What-if prediction: score a shipment that does not exist yet
+# ─────────────────────────────────────────────────────────────────────────────
+
+class PredictRequest(BaseModel):
+    """A hypothetical shipment an operator wants scored before committing."""
+    mode: str = "AIR"
+    origin_code: str = "ORD"
+    dest_code: str = "MIA"
+    service_level: str = "STANDARD"
+    planned_transit_hours: float = 24.0
+    buffer_hours: float = 6.0
+    value_usd: float = 5000.0
+    weight_kg: float = 20.0
+    carrier_reliability: float = 0.80
+    scheduled_dep_hour: int = 12
+    handoff_count: int = 2
+
+
+def _airport_table() -> pd.DataFrame:
+    """Airport reference table, cached on the function object."""
+    if not hasattr(_airport_table, "_df"):
+        _airport_table._df = pd.read_csv(
+            ML_DATA_DIR / "airports.csv").set_index("code")
+    return _airport_table._df
+
+
+def _fleet_defaults() -> dict:
+    """Median feature values across the active fleet, used to fill anything the
+    operator did not supply. Keeps a hand-entered shipment on the same scale the
+    model was trained on instead of defaulting everything to zero."""
+    if not hasattr(_fleet_defaults, "_d"):
+        df = pd.read_parquet(ML_DATA_DIR / "active.parquet")
+        d = {}
+        for f in FEATURE_NAMES:
+            if f in df.columns and pd.api.types.is_numeric_dtype(df[f]):
+                d[f] = float(df[f].median())
+        _fleet_defaults._d = d
+    return dict(_fleet_defaults._d)
+
+
+def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    r1, r2 = math.radians(lat1), math.radians(lat2)
+    dlat, dlon = math.radians(lat2 - lat1), math.radians(lon2 - lon1)
+    a = math.sin(dlat / 2) ** 2 + math.cos(r1) * math.cos(r2) * math.sin(dlon / 2) ** 2
+    return 6371.0 * 2 * math.asin(math.sqrt(a))
+
+
+@app.get("/api/locations")
+async def locations() -> list[dict]:
+    """Airport codes available for the prediction form."""
+    df = _airport_table().reset_index()
+    return [{"code": r["code"], "name": r["name"],
+             "lat": float(r["lat"]), "lon": float(r["lon"])}
+            for _, r in df.iterrows()]
+
+
+@app.post("/api/predict")
+async def predict(req: PredictRequest) -> dict:
+    """Score a hypothetical shipment against LIVE weather, and show how the
+    score would change under each mitigation an operator could actually take.
+
+    The what-if options are not canned advice: each one perturbs the real
+    feature vector and re-runs the same model, so the deltas are the model's
+    own response to that change.
+    """
+    airports = _airport_table()
+    for code in (req.origin_code, req.dest_code):
+        if code not in airports.index:
+            raise HTTPException(404, f"Unknown location: {code}")
+
+    o, d = airports.loc[req.origin_code], airports.loc[req.dest_code]
+
+    wx_o = await weather_provider.fetch(float(o["lat"]), float(o["lon"]), req.origin_code)
+    wx_d = await weather_provider.fetch(float(d["lat"]), float(d["lon"]), req.dest_code)
+    sev_o = float(wx_o.get("severity", 0.0))
+    sev_d = float(wx_d.get("severity", 0.0))
+
+    features = _fleet_defaults()
+    features.update({
+        "mode": req.mode.upper(),
+        "service_level": req.service_level.upper(),
+        "distance_km": round(_haversine_km(float(o["lat"]), float(o["lon"]),
+                                           float(d["lat"]), float(d["lon"])), 1),
+        "planned_transit_hours": req.planned_transit_hours,
+        "buffer_hours": req.buffer_hours,
+        "handoff_count": req.handoff_count,
+        "progress_pct": 0.0,
+        "value_usd": req.value_usd,
+        "weight_kg": req.weight_kg,
+        "carrier_reliability": req.carrier_reliability,
+        "scheduled_dep_hour": req.scheduled_dep_hour,
+        "day_of_week": datetime.now().weekday(),
+        "weather_severity_origin": sev_o,
+        "weather_severity_dest": sev_d,
+        "weather_severity_route_max": max(sev_o, sev_d),
+        "precip_mm": float(wx_d.get("precip_mm", 0.0)),
+        "snowfall_cm": float(wx_d.get("snowfall_cm", 0.0)),
+        "wind_kph": float(wx_d.get("wind_kph", 0.0)),
+    })
+
+    risk = scoring_engine.score_shipment(features)
+    rec = generate_recommendation(
+        risk["score"], risk["band"], risk["breach_probability"],
+        risk.get("drivers", []), features["mode"])
+
+    # ── What-if: perturb the vector and let the model answer ──
+    options = [
+        ("ADD_BUFFER", "Add 24h of schedule buffer",
+         {"buffer_hours": features["buffer_hours"] + 24}),
+        ("EXPEDITE", "Upgrade to express service",
+         {"service_level": "EXPRESS",
+          "planned_transit_hours": max(2.0, features["planned_transit_hours"] * 0.7)}),
+        ("REBOOK_CARRIER", "Move to a higher-reliability carrier",
+         {"carrier_reliability": min(0.95, features["carrier_reliability"] + 0.12)}),
+        ("REDUCE_HANDOFFS", "Remove one intermediate handoff",
+         {"handoff_count": max(0, features["handoff_count"] - 1)}),
+        ("DEPART_EARLIER", "Depart in the morning instead",
+         {"scheduled_dep_hour": 7}),
+    ]
+
+    what_if = []
+    for action, label, patch in options:
+        trial = dict(features)
+        trial.update(patch)
+        try:
+            alt = scoring_engine.score_shipment(trial)
+        except Exception:
+            continue
+        what_if.append({
+            "action": action,
+            "label": label,
+            "new_score": alt["score"],
+            "new_band": alt["band"],
+            "new_breach_probability": alt["breach_probability"],
+            "delta": round(alt["score"] - risk["score"], 2),
+            "helps": alt["score"] < risk["score"],
+        })
+    what_if.sort(key=lambda x: x["delta"])
+
+    on_time = risk["breach_probability"] < 0.5
+    return {
+        "verdict": "ON_TIME" if on_time else "AT_RISK",
+        "verdict_detail": (
+            f"Predicted to deliver on time "
+            f"({(1 - risk['breach_probability']) * 100:.0f}% confidence)"
+            if on_time else
+            f"Likely to breach SLA "
+            f"({risk['breach_probability'] * 100:.0f}% probability), "
+            f"about {risk['predicted_delay_hours']:.1f}h late"
+        ),
+        "risk": risk,
+        "drivers": risk.get("drivers", []),
+        "recommendation": rec,
+        "what_if": what_if,
+        "signals": {"weather_origin": wx_o, "weather_dest": wx_d},
+        "inputs": {k: features[k] for k in (
+            "mode", "service_level", "distance_km", "planned_transit_hours",
+            "buffer_hours", "carrier_reliability", "handoff_count")},
+    }

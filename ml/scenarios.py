@@ -40,6 +40,14 @@ SCENARIOS: list[tuple[str, str, str, str]] = [
      "Control case - clear conditions"),
 ]
 
+# The live fleet is scored against today's weather, so in a calm month almost
+# nothing lands in HIGH or CRITICAL and the dashboard has nothing to show. We
+# therefore replay a spread of genuinely disrupted days across all three modes
+# so every risk band is populated with real weather. Same model, same scoring -
+# only the weather inputs are historical.
+SPREAD_MODES = ["AIR", "OCEAN", "GROUND"]
+SPREAD_PER_MODE = 14
+
 
 def build_scenarios() -> pd.DataFrame:
     """Append pinned scenario shipments to active.parquet.
@@ -87,6 +95,39 @@ def build_scenarios() -> pd.DataFrame:
         rows.append(row)
         print(f"  [SCENARIO] {ship_id}: {airport} {date_str} "
               f"severity={sev:.3f} snow={float(w['snowfall_sum']):.1f}cm")
+
+    # ── Spread: sample real high-severity days across every mode ──
+    severe = (weather[weather["weather_severity"] > 0.25]
+              .sort_values("weather_severity", ascending=False)
+              .head(120)
+              .reset_index(drop=True))
+
+    seq = 0
+    for mode in SPREAD_MODES:
+        pool = active[active["mode"] == mode]
+        if pool.empty:
+            continue
+        base = pool.iloc[0]
+        for i in range(SPREAD_PER_MODE):
+            w = severe.iloc[(seq * 7 + i) % len(severe)]
+            airport = str(w["airport"])
+            if airport not in airports.index:
+                continue
+            seq += 1
+            row = base.copy()
+            row["id"] = f"{SCENARIO_PREFIX}{mode[:2]}-{seq:03d}"
+            row["origin_code"] = airport
+            row["origin_name"] = airports.loc[airport, "name"]
+            row["origin_lat"] = airports.loc[airport, "lat"]
+            row["origin_lon"] = airports.loc[airport, "lon"]
+            sev = float(w["weather_severity"])
+            row["weather_severity_origin"] = sev
+            row["weather_severity_route_max"] = max(
+                sev, float(row.get("weather_severity_dest", 0.0)))
+            row["precip_mm"] = float(w["precipitation_sum"])
+            row["snowfall_cm"] = float(w["snowfall_sum"])
+            row["wind_kph"] = float(w["wind_speed_10m_max"])
+            rows.append(row)
 
     scenarios = pd.DataFrame(rows)
     combined = pd.concat([active, scenarios], ignore_index=True)
