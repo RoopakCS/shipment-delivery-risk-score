@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { ArrowDown, Minus, Sparkles } from "lucide-react";
 import { api } from "../api";
 import type { Mode, PredictRequest, PredictResult } from "../types";
-import { BandPill, Card, DriverBars, RiskScore, Skeleton } from "../components/ui";
+import {
+  BandPill, Button, Card, DriverBars, PageHeader, RiskScore, Skeleton,
+} from "../components/ui";
 import { num, pct } from "../lib/format";
 
 const DEFAULTS: PredictRequest = {
@@ -34,27 +36,27 @@ export default function Predict() {
   const onTime = result?.verdict === "ON_TIME";
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h2 className="text-2xl font-bold text-ups-brown-800">New Shipment</h2>
-        <p className="text-sm text-text-muted mt-0.5">
-          Enter a shipment that does not exist yet. The model scores it against live
-          weather and shows which decisions would change the outcome.
-        </p>
-      </div>
+    <>
+      <PageHeader
+        title="New Shipment"
+        lede="Score a shipment that does not exist yet. We fetch live weather for both ends of
+              the route, run the same model that scores the fleet, and show which decisions
+              would change the outcome." />
 
-      <div className="grid lg:grid-cols-[380px_1fr] gap-5 items-start">
+      <div className="grid lg:grid-cols-[360px_1fr] gap-5 items-start">
         <Card title="Shipment details">
           <form onSubmit={submit} className="space-y-4">
             <div>
-              <Label>Mode</Label>
-              <div className="flex gap-1 mt-1">
+              <p className="eyebrow mb-1.5">Mode</p>
+              <div className="grid grid-cols-3 gap-1">
                 {(["AIR", "OCEAN", "GROUND"] as Mode[]).map((m) => (
                   <button key={m} type="button" onClick={() => set("mode", m)}
-                    className={"flex-1 text-xs font-semibold py-2 rounded border transition-colors " +
+                    aria-pressed={form.mode === m}
+                    className={"text-[11.5px] font-semibold py-2 rounded-[3px] border cursor-pointer " +
+                      "transition-colors duration-200 " +
                       (form.mode === m
                         ? "bg-ups-brown-800 text-white border-ups-brown-800"
-                        : "bg-surface border-border-warm hover:bg-surface-alt")}>
+                        : "bg-surface border-border-strong text-text-muted hover:bg-surface-alt")}>
                     {m}
                   </button>
                 ))}
@@ -64,10 +66,10 @@ export default function Predict() {
             <div className="grid grid-cols-2 gap-3">
               <Select label="Origin" value={form.origin_code}
                 onChange={(v) => set("origin_code", v)}
-                options={locations.map((l) => [l.code, l.code + " - " + l.name])} />
+                options={locations.map((l) => [l.code, `${l.code} — ${l.name}`])} />
               <Select label="Destination" value={form.dest_code}
                 onChange={(v) => set("dest_code", v)}
-                options={locations.map((l) => [l.code, l.code + " - " + l.name])} />
+                options={locations.map((l) => [l.code, `${l.code} — ${l.name}`])} />
             </div>
 
             <Select label="Service level" value={form.service_level}
@@ -75,7 +77,7 @@ export default function Predict() {
               options={[["STANDARD", "Standard"], ["EXPRESS", "Express"], ["ECONOMY", "Economy"]]} />
 
             <div className="grid grid-cols-2 gap-3">
-              <Num label="Planned transit (h)" value={form.planned_transit_hours}
+              <Num label="Transit (h)" value={form.planned_transit_hours}
                 onChange={(v) => set("planned_transit_hours", v)} />
               <Num label="Buffer (h)" value={form.buffer_hours}
                 onChange={(v) => set("buffer_hours", v)} />
@@ -90,37 +92,42 @@ export default function Predict() {
             </div>
 
             <div>
-              <Label>Carrier reliability &mdash; {pct(form.carrier_reliability)}</Label>
+              <div className="flex items-baseline justify-between">
+                <p className="eyebrow">Carrier reliability</p>
+                <span className="text-[12.5px] font-bold tabular-nums text-ups-brown-800">
+                  {pct(form.carrier_reliability)}
+                </span>
+              </div>
               <input type="range" min={0.5} max={0.95} step={0.01}
                 value={form.carrier_reliability}
+                aria-label="Carrier reliability"
                 onChange={(e) => set("carrier_reliability", Number(e.target.value))}
-                className="w-full mt-1 accent-ups-gold" />
-              <p className="text-xs text-text-muted">
+                className="w-full mt-2 accent-ups-gold cursor-pointer" />
+              <p className="text-[11px] text-text-muted mt-1">
                 the carrier&rsquo;s historical on-time rate
               </p>
             </div>
 
-            <button type="submit" disabled={loading}
-              className="w-full bg-ups-gold hover:bg-ups-gold-dark disabled:opacity-60 text-ups-brown-900 font-semibold py-2.5 rounded flex items-center justify-center gap-2">
-              <Sparkles size={16} />
-              {loading ? "Scoring against live weather..." : "Predict"}
-            </button>
+            <Button type="submit" disabled={loading}>
+              <Sparkles size={14} aria-hidden="true" />
+              {loading ? "Scoring against live weather…" : "Predict"}
+            </Button>
           </form>
         </Card>
 
         <div className="space-y-5">
           {error && (
-            <div className="border border-risk-critical/30 bg-risk-critical/5 rounded-lg p-4 text-sm text-risk-critical">
+            <div className="bg-surface border border-border-warm border-l-[3px] border-l-risk-critical
+                            rounded-[4px] p-4 text-[13px] text-risk-critical">
               {error}
             </div>
           )}
 
           {!result && !loading && !error && (
             <Card>
-              <p className="text-sm text-text-muted py-10 text-center max-w-md mx-auto">
-                Fill in a shipment and press Predict. We fetch live weather for both
-                ends of the route, score it with the same model that runs the fleet,
-                and show what would change the outcome.
+              <p className="text-[13px] text-text-muted py-12 text-center max-w-md mx-auto leading-relaxed">
+                Fill in a shipment and press Predict. You&rsquo;ll get a verdict, the reasons
+                behind it, and a ranked list of the decisions that would actually change it.
               </p>
             </Card>
           )}
@@ -129,78 +136,79 @@ export default function Predict() {
 
           {result && (
             <>
-              <div className={"rounded-lg p-5 border-l-4 " +
-                (onTime
-                  ? "bg-risk-low/5 border-risk-low border border-risk-low/30"
-                  : "bg-risk-critical/5 border-risk-critical border border-risk-critical/30")}>
-                <div className="flex items-center gap-4 flex-wrap">
+              <section className={`bg-surface border border-border-warm border-l-[3px] rounded-[4px] p-5
+                ${onTime ? "border-l-risk-low" : "border-l-risk-critical"}`}>
+                <div className="flex items-center gap-6 flex-wrap">
                   <div>
-                    <h3 className={"text-xl font-bold " + (onTime ? "text-risk-low" : "text-risk-critical")}>
-                      {onTime ? "WILL DELIVER ON TIME" : "AT RISK OF LATE DELIVERY"}
-                    </h3>
-                    <p className="text-sm text-text-main mt-1">{result.verdict_detail}</p>
+                    <p className="eyebrow">Verdict</p>
+                    <h2 className={`text-[1.5rem] font-bold tracking-tight mt-1.5 leading-none
+                      ${onTime ? "text-risk-low" : "text-risk-critical"}`}>
+                      {onTime ? "Will deliver on time" : "At risk of late delivery"}
+                    </h2>
+                    <p className="text-[12.5px] text-text-muted mt-2">{result.verdict_detail}</p>
                   </div>
-                  <div className="ml-auto flex items-center gap-3">
+                  <div className="ml-auto flex items-end gap-3">
                     <RiskScore score={result.risk.score} band={result.risk.band} size="lg" />
-                    <BandPill band={result.risk.band} />
+                    <div className="pb-1.5"><BandPill band={result.risk.band} /></div>
                   </div>
                 </div>
-              </div>
+              </section>
 
-              <div className="grid lg:grid-cols-2 gap-5">
+              <div className="grid lg:grid-cols-2 gap-5 items-start">
                 <Card title="Why" subtitle="What is driving this prediction">
                   <DriverBars drivers={result.drivers} />
                 </Card>
 
                 <Card title="What would change the outcome?"
-                      subtitle="Each option was re-scored by the same model">
-                  <ul className="space-y-2">
+                      subtitle="Each option re-scored by the same model">
+                  <ul className="divide-y divide-border-warm -my-1">
                     {result.what_if.map((w) => (
-                      <li key={w.action}
-                        className="flex items-center gap-3 border border-border-warm rounded px-3 py-2.5">
-                        <span className="text-sm flex-1">{w.label}</span>
-                        <span className="text-sm font-bold tabular-nums text-ups-brown-800">
+                      <li key={w.action} className="flex items-center gap-3 py-2.5">
+                        <span className="text-[12.5px] flex-1 text-ups-brown-800">{w.label}</span>
+                        <span className="text-[13px] font-bold tabular-nums text-ups-brown-800">
                           {num(w.new_score)}
                         </span>
-                        <span className={"text-xs font-semibold tabular-nums px-2 py-0.5 rounded flex items-center gap-1 " +
-                          (w.helps ? "bg-risk-low/10 text-risk-low" : "bg-surface-alt text-text-muted")}>
-                          {w.helps ? <ArrowDown size={11} /> : <Minus size={11} />}
+                        <span className={"text-[11px] font-bold tabular-nums px-1.5 py-1 rounded-[2px] " +
+                          "inline-flex items-center gap-1 leading-none " +
+                          (w.helps ? "bg-risk-low/10 text-risk-low" : "bg-surface-sunk text-text-faint")}>
+                          {w.helps
+                            ? <ArrowDown size={10} strokeWidth={3} aria-hidden="true" />
+                            : <Minus size={10} strokeWidth={3} aria-hidden="true" />}
                           {w.delta.toFixed(1)}
                         </span>
                       </li>
                     ))}
                   </ul>
-                  <p className="text-xs text-text-muted mt-3">
-                    These are the model&rsquo;s actual predictions for each altered
-                    shipment, not fixed advice. A zero delta means the model does not
-                    think that action helps here.
+                  <p className="text-[11px] text-text-muted mt-4 pt-3 border-t border-border-warm leading-relaxed">
+                    These are the model&rsquo;s actual predictions for each altered shipment, not
+                    fixed advice. A zero delta means the model does not think that action helps here.
                   </p>
                 </Card>
               </div>
 
-              <div className="bg-ups-gold-soft border border-border-warm border-l-4 border-l-ups-gold rounded-lg p-5">
-                <span className="font-bold text-ups-brown-900">
+              <div className="bg-surface border border-border-warm border-l-[3px] border-l-ups-gold
+                              rounded-[4px] p-5">
+                <p className="eyebrow">Recommended action</p>
+                <p className="text-[1.125rem] font-bold text-ups-brown-900 mt-2 tracking-tight">
                   {result.recommendation.action.replace(/_/g, " ")}
-                </span>
-                <p className="font-semibold mt-1.5 text-ups-brown-800">
+                </p>
+                <p className="text-[13px] font-semibold text-ups-brown-800 mt-1.5">
                   {result.recommendation.headline}
                 </p>
-                <p className="text-sm mt-1.5 leading-relaxed">{result.recommendation.detail}</p>
-                <p className="text-[11px] text-text-muted mt-3">
-                  generated by: {result.recommendation.generated_by}
+                <p className="text-[12.5px] text-text-muted mt-2 leading-relaxed">
+                  {result.recommendation.detail}
+                </p>
+                <p className="text-[10.5px] text-text-faint mt-3 pt-3 border-t border-border-warm">
+                  generated by {result.recommendation.generated_by}
                 </p>
               </div>
             </>
           )}
         </div>
       </div>
-    </div>
+    </>
   );
 }
-
-const Label = ({ children }: { children: React.ReactNode }) => (
-  <span className="text-xs uppercase tracking-wide text-text-muted font-semibold">{children}</span>
-);
 
 function Select({ label, value, onChange, options }: {
   label: string; value: string; onChange: (v: string) => void;
@@ -208,9 +216,10 @@ function Select({ label, value, onChange, options }: {
 }) {
   return (
     <label className="block">
-      <Label>{label}</Label>
+      <span className="eyebrow">{label}</span>
       <select value={value} onChange={(e) => onChange(e.target.value)}
-        className="w-full mt-1 border border-border-warm rounded px-2 py-1.5 text-sm bg-surface">
+        className="w-full mt-1.5 border border-border-strong rounded-[3px] px-2 py-1.5
+                   text-[12.5px] bg-surface cursor-pointer">
         {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
       </select>
     </label>
@@ -223,10 +232,11 @@ function Num({ label, value, onChange, min, max }: {
 }) {
   return (
     <label className="block">
-      <Label>{label}</Label>
+      <span className="eyebrow">{label}</span>
       <input type="number" value={value} min={min} max={max}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full mt-1 border border-border-warm rounded px-2 py-1.5 text-sm tabular-nums" />
+        className="w-full mt-1.5 border border-border-strong rounded-[3px] px-2 py-1.5
+                   text-[12.5px] tabular-nums" />
     </label>
   );
 }

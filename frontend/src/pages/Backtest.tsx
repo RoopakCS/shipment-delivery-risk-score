@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
+import { Check } from "lucide-react";
 import { api } from "../api";
 import type { BacktestEvent } from "../types";
-import { BandPill, Card, ErrorState, RiskScore, Skeleton } from "../components/ui";
+import { BandPill, ErrorState, PageHeader, RiskScore, Skeleton } from "../components/ui";
 import { num, pct } from "../lib/format";
 
 export default function Backtest() {
@@ -18,85 +19,84 @@ export default function Backtest() {
   if (error) return <ErrorState error={error} onRetry={load} />;
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h2 className="text-2xl font-bold text-ups-brown-800">Backtest &mdash; we called it</h2>
-        <p className="text-sm text-text-muted mt-0.5 max-w-3xl">
-          We replayed real disruption days through the model using only the
-          information that was available beforehand, then compared its prediction
-          against what was actually recorded on the day.
-        </p>
-      </div>
+    <>
+      <PageHeader
+        title="Backtest — we called it"
+        lede="Real disruption days replayed through the model using only the information
+              available beforehand, set against what was actually recorded on the day." />
 
       {!events ? <Skeleton rows={6} /> : events.map((e) => {
         const p = e.prediction;
         const a = e.actual_outcome;
+        const hit = e.verdict.startsWith("TRUE");
         return (
-          <Card key={e.id}>
-            <div className="flex items-center gap-3 flex-wrap mb-4 pb-3 border-b border-border-warm">
-              <h3 className="font-bold text-ups-brown-800">
-                {e.airport_name} ({e.airport})
-              </h3>
-              <span className="text-sm text-text-muted">{e.date}</span>
-              <span className="ml-auto text-[11px] font-bold uppercase tracking-wide bg-risk-low text-white px-2 py-1 rounded">
+          <article key={e.id} className="bg-surface border border-border-warm rounded-[4px]">
+            <header className="px-5 py-3 border-b border-border-warm flex items-center gap-3 flex-wrap">
+              <h2 className="text-[13px] font-semibold text-ups-brown-800">
+                {e.airport_name} <span className="text-text-muted font-normal">({e.airport})</span>
+              </h2>
+              <span className="text-[12px] text-text-muted tabular-nums">{e.date}</span>
+              <span className={`ml-auto inline-flex items-center gap-1.5 text-[10px] font-bold
+                uppercase tracking-[0.06em] px-2 py-1 rounded-[2px] leading-none
+                ${hit ? "bg-risk-low text-white" : "bg-ups-brown-400 text-white"}`}>
+                {hit && <Check size={11} strokeWidth={3} aria-hidden="true" />}
                 {e.verdict.replace(/_/g, " ")}
               </span>
-            </div>
+            </header>
 
-            <div className="grid md:grid-cols-[1fr_auto_1fr] gap-6 items-start">
+            <div className="grid md:grid-cols-[1fr_auto_1fr]">
               {/* Prediction */}
-              <div>
-                <h4 className="text-xs uppercase tracking-wide font-semibold text-text-muted mb-3">
-                  What the model predicted
-                </h4>
-                <div className="flex items-center gap-3">
+              <div className="p-5">
+                <p className="eyebrow">What the model predicted</p>
+                <div className="flex items-end gap-3 mt-3">
                   <RiskScore score={p.risk_score} band={p.band} size="lg" />
                   <BandPill band={p.band} />
                 </div>
-                <p className="text-sm mt-2">
-                  <strong className="tabular-nums">{pct(p.breach_probability)}</strong>{" "}
+                <p className="text-[12.5px] text-text-muted mt-2 tabular-nums">
+                  <strong className="text-ups-brown-800">{pct(p.breach_probability)}</strong>{" "}
                   probability of breach
                 </p>
-                <ul className="mt-3 space-y-1">
+                <ul className="mt-4 space-y-1.5 border-t border-border-warm pt-3">
                   {(p.drivers ?? []).slice(0, 3).map((d) => (
-                    <li key={d.feature} className="text-xs text-text-muted">
-                      &bull; {d.explanation}
+                    <li key={d.feature} className="text-[11.5px] text-text-muted leading-snug
+                                                   pl-3 border-l border-border-strong">
+                      {d.explanation}
                     </li>
                   ))}
                 </ul>
-                <p className="text-[11px] text-text-muted mt-3 italic">
+                <p className="text-[10.5px] text-text-faint mt-3 italic">
                   Using only what was knowable before this day.
                 </p>
               </div>
 
-              <div className="hidden md:flex flex-col items-center self-stretch">
+              <div className="hidden md:flex flex-col items-center px-2">
                 <div className="flex-1 w-px bg-border-warm" />
-                <span className="text-xs font-bold text-text-muted py-2">vs</span>
+                <span className="eyebrow py-2">vs</span>
                 <div className="flex-1 w-px bg-border-warm" />
               </div>
 
               {/* Actual */}
-              <div>
-                <h4 className="text-xs uppercase tracking-wide font-semibold text-text-muted mb-3">
-                  What actually happened
-                </h4>
-                <div className="text-6xl font-bold tabular-nums text-risk-critical">
+              <div className="p-5 bg-surface-alt border-t md:border-t-0 md:border-l border-border-warm">
+                <p className="eyebrow">What actually happened</p>
+                <div className="text-[3.5rem] leading-[0.9] font-bold tabular-nums tracking-tight
+                                text-risk-critical mt-3">
                   {pct(a.delay_rate)}
                 </div>
-                <p className="text-sm mt-1">of flights were actually delayed</p>
-                <ul className="mt-3 space-y-1 text-xs text-text-muted">
-                  <li>&bull; {a.delayed_flights} of {a.total_flights} flights late</li>
-                  <li>&bull; mean delay {num(a.mean_delay_minutes)} minutes</li>
+                <p className="text-[12.5px] text-text-muted mt-2">of flights were actually delayed</p>
+                <ul className="mt-4 space-y-1.5 border-t border-border-warm pt-3
+                               text-[11.5px] text-text-muted tabular-nums">
+                  <li>{a.delayed_flights} of {a.total_flights} flights late</li>
+                  <li>mean delay {num(a.mean_delay_minutes)} minutes</li>
                   {a.max_delay_minutes != null && (
-                    <li>&bull; worst delay {num(a.max_delay_minutes)} minutes</li>
+                    <li>worst delay {num(a.max_delay_minutes)} minutes</li>
                   )}
                 </ul>
-                <p className="text-[11px] text-text-muted mt-3 italic">Recorded outcome.</p>
+                <p className="text-[10.5px] text-text-faint mt-3 italic">Recorded outcome.</p>
               </div>
             </div>
-          </Card>
+          </article>
         );
       })}
-    </div>
+    </>
   );
 }

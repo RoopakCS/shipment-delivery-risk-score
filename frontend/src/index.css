@@ -1,32 +1,104 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
+/*
+  UPS Risk Console - design tokens.
+
+  Swiss/minimal system carrying UPS brand colour. Two rules hold it together:
+    1. Gold is brand and interaction only. It never means "warning".
+    2. Risk colour is reserved for risk, and only ever appears as a score,
+       a pill, or a 3px rule. Never as a filled panel - a wall of red is noise.
+*/
 @theme {
-  --color-ups-brown-900: #2C1608;
+  /* Brand */
+  --color-ups-brown-900: #23120A;
   --color-ups-brown-800: #351C15;
+  --color-ups-brown-700: #4A2A18;
   --color-ups-brown-600: #5F3C1E;
   --color-ups-brown-400: #8B6A4F;
+  --color-ups-brown-200: #C9B49F;
   --color-ups-gold: #FFB500;
-  --color-ups-gold-dark: #E5A200;
-  --color-ups-gold-soft: #FFF4DB;
-  
+  --color-ups-gold-dark: #D99500;
+  --color-ups-gold-soft: #FFF6E0;
+
+  /* Surfaces - warm neutrals, never blue-grey */
   --color-surface: #FFFFFF;
-  --color-surface-alt: #F7F5F3;
-  --color-border-warm: #E3DED8;
-  
-  --color-text-main: #1A1A1A;
-  --color-text-muted: #6B6560;
+  --color-surface-alt: #F6F4F1;
+  --color-surface-sunk: #EFEBE6;
+  --color-border-warm: #E2DCD4;
+  --color-border-strong: #CDC4B8;
 
-  --color-risk-low: #1B7F5A;
-  --color-risk-medium: #C2660A;
-  --color-risk-high: #D6461F;
-  --color-risk-critical: #B01217;
+  /* Text - 4.5:1 minimum on white */
+  --color-text-main: #17130F;
+  --color-text-muted: #6A625A;
+  --color-text-faint: #938A80;
 
-  --font-sans: 'Inter', 'Roboto', system-ui, sans-serif;
+  /* Risk scale - deliberately distinct from gold */
+  --color-risk-low: #157050;
+  --color-risk-medium: #B45A05;
+  --color-risk-high: #C8401A;
+  --color-risk-critical: #A00F14;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Dense dashboard spacing rhythm (4/8 base) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+
+  --radius-sharp: 3px;
+  --radius-panel: 4px;
 }
 
 @layer base {
   body {
     background-color: var(--color-surface-alt);
     color: var(--color-text-main);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Every figure in this product sits in a column. Align them all. */
+  .tabular, table, .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  h1, h2, h3 {
+    letter-spacing: -0.015em;
+  }
+
+  /* Keyboard focus must always be visible - gold, never removed. */
+  :focus-visible {
+    outline: 2px solid var(--color-ups-gold);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background: var(--color-ups-gold-soft);
+  }
+}
+
+@layer utilities {
+  /* Micro-label: the Swiss workhorse. Used for every field caption. */
+  .eyebrow {
+    font-size: 0.6875rem;
+    line-height: 1;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
